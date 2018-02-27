@@ -10,4 +10,11 @@
 
 	<include package="nti.contenttypes.completion" />
 
+    <!-- Adapters -->
+    <adapter name="CompletionPolicy"
+             for="nti.contenttypes.completion.interfaces.ICompletionContext
+                  pyramid.interfaces.IRequest"
+             factory=".views.CompletionContextPolicyPathAdapter"
+             provides="zope.traversing.interfaces.IPathAdapter" />
+
 </configure>
