@@ -16,12 +16,13 @@ from nti.app.base.abstract_views import AbstractAuthenticatedView
 
 from nti.app.contenttypes.completion.views import MessageFactory as _
 
-from nti.app.contenttypes.completion.views import CompletionContextPolicyPathAdapter
+from nti.app.contenttypes.completion.views import COMPLETION_POLICY_VIEW_NAME
 
 from nti.app.externalization.view_mixins import ModeledContentUploadRequestUtilsMixin
 
 from nti.appserver.ugd_edit_views import UGDPutView
 
+from nti.contenttypes.completion.interfaces import ICompletionContext
 from nti.contenttypes.completion.interfaces import ICompletableItemCompletionPolicy
 from nti.contenttypes.completion.interfaces import ICompletionContextCompletionPolicyContainer
 
@@ -39,12 +40,18 @@ class AbstractCompletionContextPolicyView(AbstractAuthenticatedView):
 
     @property
     def completion_context(self):
-        return self.context.context
+        return self.context
+
+    @property
+    def item_ntiid(self):
+        # Get the sub path ntiid if we're drilling in.
+        return self.request.subpath[0] if self.request.subpath else ''
 
 
 @view_config(route_name='objects.generic.traversal',
              renderer='rest',
-             context=CompletionContextPolicyPathAdapter,
+             name=COMPLETION_POLICY_VIEW_NAME,
+             context=ICompletionContext,
              permission=nauth.ACT_UPDATE,
              request_method='GET')
 class CompletionContextPolicyView(AbstractCompletionContextPolicyView):
@@ -54,14 +61,21 @@ class CompletionContextPolicyView(AbstractCompletionContextPolicyView):
     """
 
     def __call__(self):
-        if self.completion_container.context_policy:
-            return self.completion_container.context_policy
-        raise hexc.HTTPNotFound()
+        item_ntiid = self.item_ntiid
+        if not item_ntiid:
+            result = self.completion_container.context_policy
+        else:
+            result = self.completion_container.get(item_ntiid)
+
+        if result is None:
+            raise hexc.HTTPNotFound()
+        return result
 
 
 @view_config(route_name='objects.generic.traversal',
              renderer='rest',
-             context=CompletionContextPolicyPathAdapter,
+             context=ICompletionContext,
+             name=COMPLETION_POLICY_VIEW_NAME,
              permission=nauth.ACT_UPDATE,
              request_method='POST')
 class CompletionContextPolicyPostView(AbstractCompletionContextPolicyView,
@@ -69,14 +83,17 @@ class CompletionContextPolicyPostView(AbstractCompletionContextPolicyView,
     """
     A view to set the :class:`ICompletableItemCompletionPolicy` for our
     :class:`ICompletionContext`.
-
-    *subpath for ntiid -> container?
     """
 
     def _do_call(self):
         new_policy = self.readCreateUpdateContentObject(self.remoteUser)
-        self.completion_container.context_policy = new_policy
-        new_policy.__parent__ = self.completion_container
+        item_ntiid = self.item_ntiid
+        if not item_ntiid:
+            self.completion_container.context_policy = new_policy
+            new_policy.__parent__ = self.completion_container
+        else:
+            logger.info('Added completable policy for %s', item_ntiid)
+            self.completion_container[item_ntiid] = new_policy
         return new_policy
 
 
@@ -93,5 +110,24 @@ class CompletionPolicyPutView(UGDPutView):
     def _get_object_to_update(self):
         return self.context
 
-# FIXME
-# subpath
+
+@view_config(route_name='objects.generic.traversal',
+             renderer='rest',
+             name=COMPLETION_POLICY_VIEW_NAME,
+             context=ICompletionContext,
+             permission=nauth.ACT_UPDATE,
+             request_method='DELETE')
+class CompletionPolicyDeleteView(AbstractCompletionContextPolicyView):
+
+
+    def __call__(self):
+        item_ntiid = self.item_ntiid
+        if not item_ntiid:
+            self.completion_container.context_policy = None
+        else:
+            try:
+                del self.completion_container[item_ntiid]
+                logger.info('Deleted completable policy for %s', item_ntiid)
+            except KeyError:
+                pass
+        return hexc.HTTPNoContent()

@@ -15,7 +15,7 @@ from hamcrest import assert_that
 
 from zope import interface
 
-from nti.app.contenttypes.completion import COMPLETION_POLICY_PATH_NAME
+from nti.app.contenttypes.completion import COMPLETION_POLICY_VIEW_NAME
 
 from nti.app.contenttypes.completion.tests import CompletionTestLayer
 
@@ -84,7 +84,7 @@ class TestCompletionPolicyViews(ApplicationLayerTest):
                      u'MimeType': aggregate_mimetype}
 
         url = '/dataserver2/Objects/%s/%s' % (context_ntiid,
-                                              COMPLETION_POLICY_PATH_NAME)
+                                              COMPLETION_POLICY_VIEW_NAME)
         # Empty
         self.testapp.get(url, status=404)
         self.testapp.get(url, extra_environ=non_admin_environ, status=403)
@@ -145,3 +145,52 @@ class TestCompletionPolicyViews(ApplicationLayerTest):
         self.testapp.put_json(policy_href, {'count': 10},
                               extra_environ=non_admin_environ,
                               status=403)
+
+        # Update sub-policy
+        sub_item_ntiid1 = 'item_ntiid1'
+        sub_url = '%s/%s' % (url, sub_item_ntiid1)
+        self.testapp.get(sub_url, status=404)
+        self.testapp.get(sub_url, extra_environ=non_admin_environ, status=403)
+
+        # Post
+        res = self.testapp.post_json(sub_url, full_data)
+        res = res.json_body
+        sub_policy_href = res['href']
+        last_last_mod = res[LAST_MODIFIED]
+        assert_that(res[CREATED_TIME], not_none())
+        assert_that(last_last_mod, not_none())
+        assert_that(res['count'], none())
+        assert_that(res['percentage'], none())
+        assert_that(sub_policy_href, not_none())
+
+        assert_that(sub_policy_href, is_not(policy_href))
+
+        # Put
+        res = self.testapp.put_json(sub_policy_href, {'count': 10})
+        res = res.json_body
+        assert_that(res['count'], is_(10))
+        assert_that(res['percentage'], none())
+
+        res = self.testapp.put_json(sub_policy_href, {'percentage': .5})
+        res = res.json_body
+        assert_that(res['count'], is_(10))
+        assert_that(res['percentage'], is_(.5))
+
+        res = self.testapp.get(sub_url)
+        res = res.json_body
+        assert_that(res['count'], is_(10))
+        assert_that(res['percentage'], is_(.5))
+
+        res = self.testapp.get(url)
+        res = res.json_body
+        assert_that(res['count'], none())
+        assert_that(res['percentage'], none())
+
+        self.testapp.get(sub_url, extra_environ=non_admin_environ, status=403)
+
+        # Delete
+        self.testapp.delete(sub_url)
+        self.testapp.delete(url)
+
+        self.testapp.get(sub_url, status=404)
+        self.testapp.get(url, status=404)
