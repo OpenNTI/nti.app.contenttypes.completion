@@ -29,8 +29,8 @@ setup(
     author_email='jason@nextthought.com',
     description="NTI Completion App Layer",
     long_description=(
-        _read('README.rst') 
-        + '\n\n' 
+        _read('README.rst')
+        + '\n\n'
         + _read("CHANGES.rst")
     ),
     license='Apache',
@@ -67,6 +67,7 @@ setup(
             'Sphinx',
             'repoze.sphinx.autointerface',
             'sphinx_rtd_theme',
+            'zope.traversal'
         ],
     },
     entry_points=entry_points,
