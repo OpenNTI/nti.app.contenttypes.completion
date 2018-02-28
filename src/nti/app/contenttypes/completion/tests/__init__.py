@@ -43,7 +43,8 @@ class SharedConfiguringTestLayer(ZopeComponentLayer,
 class CompletionTestLayer(ApplicationTestLayer):
 
     set_up_packages = ('nti.dataserver',
-                       'nti.app.contenttypes.completion',)
+                       'nti.app.contenttypes.completion',
+                       'nti.app.contenttypes.completion.tests')
 
     @classmethod
     def setUp(cls):

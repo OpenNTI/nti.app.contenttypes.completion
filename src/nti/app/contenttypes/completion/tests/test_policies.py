@@ -19,13 +19,13 @@ from nti.app.contenttypes.completion import COMPLETION_POLICY_VIEW_NAME
 
 from nti.app.contenttypes.completion.tests import CompletionTestLayer
 
+from nti.app.contenttypes.completion.tests.interfaces import ITestPersistentCompletionContext
+
 from nti.app.testing.application_webtest import ApplicationLayerTest
 
 from nti.app.testing.decorators import WithSharedApplicationMockDS
 
 from nti.contenttypes.completion.policies import CompletableItemAggregateCompletionPolicy
-
-from nti.contenttypes.completion.interfaces import ICompletionContext
 
 from nti.contenttypes.completion.tests.test_models import MockCompletionContext
 
@@ -48,7 +48,7 @@ CREATED_TIME = StandardExternalFields.CREATED_TIME
 LAST_MODIFIED = StandardExternalFields.LAST_MODIFIED
 
 
-@interface.implementer(ICompletionContext)
+@interface.implementer(ITestPersistentCompletionContext)
 class PersistentCompletionContext(MockCompletionContext,
                                   PersistentPropertyHolder,
                                   ZContainedMixin):
@@ -71,9 +71,9 @@ class TestCompletionPolicyViews(ApplicationLayerTest):
             completion_context = PersistentCompletionContext()
             completion_context.containerId = 'container_id'
             interface.alsoProvides(completion_context, IContained)
+            self._create_user(non_admin_username)
             user = User.get_user(admin_username)
             user.addContainedObject(completion_context)
-            self._create_user(non_admin_username)
             context_ntiid = to_external_ntiid_oid(completion_context)
         assert_that(context_ntiid, not_none())
 
@@ -83,13 +83,18 @@ class TestCompletionPolicyViews(ApplicationLayerTest):
                      u'count': None,
                      u'MimeType': aggregate_mimetype}
 
-        url = '/dataserver2/Objects/%s/%s' % (context_ntiid,
-                                              COMPLETION_POLICY_VIEW_NAME)
+        context_url = '/dataserver2/Objects/%s' % context_ntiid
+        context_res = self.testapp.get(context_url).json_body
+        self.require_link_href_with_rel(context_res,
+                                        COMPLETION_POLICY_VIEW_NAME)
+
+        url = '/dataserver2/Objects/%s/%s' % (context_ntiid, COMPLETION_POLICY_VIEW_NAME)
+
         # Empty
         self.testapp.get(url, status=404)
         self.testapp.get(url, extra_environ=non_admin_environ, status=403)
 
-        # Post
+        # Update
         res = self.testapp.put_json(url, full_data)
         res = res.json_body
         policy_href = res['href']
