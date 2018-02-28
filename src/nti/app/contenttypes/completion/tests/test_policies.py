@@ -90,7 +90,7 @@ class TestCompletionPolicyViews(ApplicationLayerTest):
         self.testapp.get(url, extra_environ=non_admin_environ, status=403)
 
         # Post
-        res = self.testapp.post_json(url, full_data)
+        res = self.testapp.put_json(url, full_data)
         res = res.json_body
         policy_href = res['href']
         last_last_mod = res[LAST_MODIFIED]
@@ -139,9 +139,9 @@ class TestCompletionPolicyViews(ApplicationLayerTest):
         self.testapp.put_json(policy_href, {'count': None})
         self.testapp.put_json(policy_href, {'percentage': None})
 
-        self.testapp.post_json(url, full_data,
-                               extra_environ=non_admin_environ,
-                               status=403)
+        self.testapp.put_json(url, full_data,
+                              extra_environ=non_admin_environ,
+                              status=403)
         self.testapp.put_json(policy_href, {'count': 10},
                               extra_environ=non_admin_environ,
                               status=403)
@@ -153,7 +153,7 @@ class TestCompletionPolicyViews(ApplicationLayerTest):
         self.testapp.get(sub_url, extra_environ=non_admin_environ, status=403)
 
         # Post
-        res = self.testapp.post_json(sub_url, full_data)
+        res = self.testapp.put_json(sub_url, full_data)
         res = res.json_body
         sub_policy_href = res['href']
         last_last_mod = res[LAST_MODIFIED]
