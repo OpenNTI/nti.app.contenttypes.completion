@@ -131,6 +131,6 @@ class _CompletableItemDecorator(AbstractAuthenticatedRequestAwareDecorator):
             item_mime_type = getattr(context, 'mime_type', '')
             is_required = item_mime_type in default_policy.mime_types
         result['CompletionRequired'] = is_required
-        # We're default or if we are not explicitly required/not-required
+        # We're default if we are not explicitly required/not-required
         result['CompletionDefaultState'] = default_state
 
