@@ -14,12 +14,15 @@ from zope import interface
 from zope.location.interfaces import ILocation
 
 from nti.app.contenttypes.completion import COMPLETION_POLICY_VIEW_NAME
+from nti.app.contenttypes.completion import COMPLETION_REQUIRED_VIEW_NAME
+from nti.app.contenttypes.completion import COMPLETION_NOT_REQUIRED_VIEW_NAME
 
 from nti.app.renderers.decorators import AbstractAuthenticatedRequestAwareDecorator
 
 from nti.appserver.pyramid_authorization import has_permission
 
 from nti.contenttypes.completion.interfaces import ICompletionContext
+from nti.contenttypes.completion.interfaces import ICompletionContextCompletionPolicyContainer
 
 from nti.dataserver.authorization import ACT_CONTENT_EDIT
 
@@ -53,10 +56,35 @@ class _CompletionContextAdminDecorator(AbstractAuthenticatedRequestAwareDecorato
 
     def _do_decorate_external(self, context, result):
         _links = result.setdefault(LINKS, [])
-        for name in (COMPLETION_POLICY_VIEW_NAME,):
+        link = Link(context,
+                    rel=COMPLETION_POLICY_VIEW_NAME,
+                    elements=('@@%s' % COMPLETION_POLICY_VIEW_NAME,))
+        interface.alsoProvides(link, ILocation)
+        link.__name__ = ''
+        link.__parent__ = context
+        _links.append(link)
+
+
+@component.adapter(ICompletionContext)
+@interface.implementer(IExternalMappingDecorator)
+class _CompletionContextSettingsDecorator(AbstractAuthenticatedRequestAwareDecorator):
+    """
+    Decorate the :class:`ICompletionContext` with appropriate links for admins.
+    """
+
+    def _predicate(self, context, unused_result):
+        completion_policy = ICompletionContextCompletionPolicyContainer(context)
+        return self._is_authenticated \
+           and completion_policy.context_policy is not None \
+           and _check_access(context, self.remoteUser, self.request)
+
+    def _do_decorate_external(self, context, result):
+        _links = result.setdefault(LINKS, [])
+        for name in (COMPLETION_REQUIRED_VIEW_NAME,
+                     COMPLETION_NOT_REQUIRED_VIEW_NAME):
             link = Link(context,
                         rel=name,
-                        elements=(name,))
+                        elements=('@@%s' % name,))
             interface.alsoProvides(link, ILocation)
             link.__name__ = ''
             link.__parent__ = context

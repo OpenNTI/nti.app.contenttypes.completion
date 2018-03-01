@@ -10,7 +10,13 @@
 
 	<include package="nti.contenttypes.completion" />
 
+    <!-- Decorators -->
     <subscriber factory=".decorators._CompletionContextAdminDecorator"
+                provides="nti.externalization.interfaces.IExternalMappingDecorator"
+                for="nti.contenttypes.completion.interfaces.ICompletionContext
+                     pyramid.interfaces.IRequest" />
+
+    <subscriber factory=".decorators._CompletionContextSettingsDecorator"
                 provides="nti.externalization.interfaces.IExternalMappingDecorator"
                 for="nti.contenttypes.completion.interfaces.ICompletionContext
                      pyramid.interfaces.IRequest" />

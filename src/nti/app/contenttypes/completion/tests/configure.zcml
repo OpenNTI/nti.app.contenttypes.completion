@@ -8,8 +8,14 @@
     <include package="nti.externalization" file="meta.zcml" />
     <include package="nti.externalization" />
 
+    <adapter factory="nti.traversal.traversal.DefaultAdapterTraversable"
+             for="nti.contenttypes.completion.interfaces.ICompletionContext
+                  pyramid.interfaces.IRequest"
+             provides="zope.traversing.interfaces.ITraversable" />
+
     <ext:registerAutoPackageIO
-        root_interfaces=".interfaces.ITestPersistentCompletionContext"
-        modules=".test_policies" />
+        root_interfaces=".interfaces.ITestPersistentCompletableItem
+                         .interfaces.ITestPersistentCompletionContext"
+        modules=".test_models" />
 
 </configure>

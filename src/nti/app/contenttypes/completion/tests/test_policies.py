@@ -19,7 +19,7 @@ from nti.app.contenttypes.completion import COMPLETION_POLICY_VIEW_NAME
 
 from nti.app.contenttypes.completion.tests import CompletionTestLayer
 
-from nti.app.contenttypes.completion.tests.interfaces import ITestPersistentCompletionContext
+from nti.app.contenttypes.completion.tests.test_models import PersistentCompletionContext
 
 from nti.app.testing.application_webtest import ApplicationLayerTest
 
@@ -27,11 +27,7 @@ from nti.app.testing.decorators import WithSharedApplicationMockDS
 
 from nti.contenttypes.completion.policies import CompletableItemAggregateCompletionPolicy
 
-from nti.contenttypes.completion.tests.test_models import MockCompletionContext
-
 from nti.coremetadata.interfaces import IContained
-
-from nti.coremetadata.mixins import ZContainedMixin
 
 from nti.dataserver.tests import mock_dataserver
 
@@ -41,18 +37,9 @@ from nti.externalization.externalization import StandardExternalFields
 
 from nti.ntiids.oids import to_external_ntiid_oid
 
-from nti.zodb.persistentproperty import PersistentPropertyHolder
-
 ITEMS = StandardExternalFields.ITEMS
 CREATED_TIME = StandardExternalFields.CREATED_TIME
 LAST_MODIFIED = StandardExternalFields.LAST_MODIFIED
-
-
-@interface.implementer(ITestPersistentCompletionContext)
-class PersistentCompletionContext(MockCompletionContext,
-                                  PersistentPropertyHolder,
-                                  ZContainedMixin):
-    pass
 
 
 class TestCompletionPolicyViews(ApplicationLayerTest):
@@ -157,7 +144,7 @@ class TestCompletionPolicyViews(ApplicationLayerTest):
         self.testapp.get(sub_url, status=404)
         self.testapp.get(sub_url, extra_environ=non_admin_environ, status=403)
 
-        # Post
+        # Update
         res = self.testapp.put_json(sub_url, full_data)
         res = res.json_body
         sub_policy_href = res['href']
