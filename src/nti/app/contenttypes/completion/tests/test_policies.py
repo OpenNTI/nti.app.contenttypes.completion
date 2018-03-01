@@ -19,19 +19,15 @@ from nti.app.contenttypes.completion import COMPLETION_POLICY_VIEW_NAME
 
 from nti.app.contenttypes.completion.tests import CompletionTestLayer
 
+from nti.app.contenttypes.completion.tests.test_models import PersistentCompletionContext
+
 from nti.app.testing.application_webtest import ApplicationLayerTest
 
 from nti.app.testing.decorators import WithSharedApplicationMockDS
 
 from nti.contenttypes.completion.policies import CompletableItemAggregateCompletionPolicy
 
-from nti.contenttypes.completion.interfaces import ICompletionContext
-
-from nti.contenttypes.completion.tests.test_models import MockCompletionContext
-
 from nti.coremetadata.interfaces import IContained
-
-from nti.coremetadata.mixins import ZContainedMixin
 
 from nti.dataserver.tests import mock_dataserver
 
@@ -41,18 +37,9 @@ from nti.externalization.externalization import StandardExternalFields
 
 from nti.ntiids.oids import to_external_ntiid_oid
 
-from nti.zodb.persistentproperty import PersistentPropertyHolder
-
 ITEMS = StandardExternalFields.ITEMS
 CREATED_TIME = StandardExternalFields.CREATED_TIME
 LAST_MODIFIED = StandardExternalFields.LAST_MODIFIED
-
-
-@interface.implementer(ICompletionContext)
-class PersistentCompletionContext(MockCompletionContext,
-                                  PersistentPropertyHolder,
-                                  ZContainedMixin):
-    pass
 
 
 class TestCompletionPolicyViews(ApplicationLayerTest):
@@ -71,9 +58,9 @@ class TestCompletionPolicyViews(ApplicationLayerTest):
             completion_context = PersistentCompletionContext()
             completion_context.containerId = 'container_id'
             interface.alsoProvides(completion_context, IContained)
+            self._create_user(non_admin_username)
             user = User.get_user(admin_username)
             user.addContainedObject(completion_context)
-            self._create_user(non_admin_username)
             context_ntiid = to_external_ntiid_oid(completion_context)
         assert_that(context_ntiid, not_none())
 
@@ -83,14 +70,19 @@ class TestCompletionPolicyViews(ApplicationLayerTest):
                      u'count': None,
                      u'MimeType': aggregate_mimetype}
 
-        url = '/dataserver2/Objects/%s/%s' % (context_ntiid,
-                                              COMPLETION_POLICY_VIEW_NAME)
+        context_url = '/dataserver2/Objects/%s' % context_ntiid
+        context_res = self.testapp.get(context_url).json_body
+        self.require_link_href_with_rel(context_res,
+                                        COMPLETION_POLICY_VIEW_NAME)
+
+        url = '/dataserver2/Objects/%s/%s' % (context_ntiid, COMPLETION_POLICY_VIEW_NAME)
+
         # Empty
         self.testapp.get(url, status=404)
         self.testapp.get(url, extra_environ=non_admin_environ, status=403)
 
-        # Post
-        res = self.testapp.post_json(url, full_data)
+        # Update
+        res = self.testapp.put_json(url, full_data)
         res = res.json_body
         policy_href = res['href']
         last_last_mod = res[LAST_MODIFIED]
@@ -139,9 +131,9 @@ class TestCompletionPolicyViews(ApplicationLayerTest):
         self.testapp.put_json(policy_href, {'count': None})
         self.testapp.put_json(policy_href, {'percentage': None})
 
-        self.testapp.post_json(url, full_data,
-                               extra_environ=non_admin_environ,
-                               status=403)
+        self.testapp.put_json(url, full_data,
+                              extra_environ=non_admin_environ,
+                              status=403)
         self.testapp.put_json(policy_href, {'count': 10},
                               extra_environ=non_admin_environ,
                               status=403)
@@ -152,8 +144,8 @@ class TestCompletionPolicyViews(ApplicationLayerTest):
         self.testapp.get(sub_url, status=404)
         self.testapp.get(sub_url, extra_environ=non_admin_environ, status=403)
 
-        # Post
-        res = self.testapp.post_json(sub_url, full_data)
+        # Update
+        res = self.testapp.put_json(sub_url, full_data)
         res = res.json_body
         sub_policy_href = res['href']
         last_last_mod = res[LAST_MODIFIED]

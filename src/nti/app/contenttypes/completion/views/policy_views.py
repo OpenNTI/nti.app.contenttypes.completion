@@ -77,9 +77,9 @@ class CompletionContextPolicyView(AbstractCompletionContextPolicyView):
              context=ICompletionContext,
              name=COMPLETION_POLICY_VIEW_NAME,
              permission=nauth.ACT_UPDATE,
-             request_method='POST')
-class CompletionContextPolicyPostView(AbstractCompletionContextPolicyView,
-                                      ModeledContentUploadRequestUtilsMixin):
+             request_method='PUT')
+class CompletionContextPolicyUpdateView(AbstractCompletionContextPolicyView,
+                                        ModeledContentUploadRequestUtilsMixin):
     """
     A view to set the :class:`ICompletableItemCompletionPolicy` for our
     :class:`ICompletionContext`.
