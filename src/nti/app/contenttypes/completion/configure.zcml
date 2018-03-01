@@ -21,4 +21,9 @@
                 for="nti.contenttypes.completion.interfaces.ICompletionContext
                      pyramid.interfaces.IRequest" />
 
+    <subscriber factory=".decorators._CompletableItemDecorator"
+                provides="nti.externalization.interfaces.IExternalMappingDecorator"
+                for="nti.contenttypes.completion.interfaces.ICompletableItem
+                     pyramid.interfaces.IRequest" />
+
 </configure>

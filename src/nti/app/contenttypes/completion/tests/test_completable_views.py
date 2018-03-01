@@ -8,13 +8,15 @@ from __future__ import absolute_import
 # pylint: disable=protected-access,too-many-public-methods,arguments-differ
 
 from hamcrest import is_
+from hamcrest import contains
 from hamcrest import not_none
 from hamcrest import has_length
 from hamcrest import assert_that
-from hamcrest import contains
+from hamcrest import has_entries
 from hamcrest import contains_inanyorder
 
 from zope import interface
+from zope import component
 
 from nti.app.contenttypes.completion import COMPLETION_POLICY_VIEW_NAME
 from nti.app.contenttypes.completion import COMPLETION_REQUIRED_VIEW_NAME
@@ -22,12 +24,16 @@ from nti.app.contenttypes.completion import COMPLETION_NOT_REQUIRED_VIEW_NAME
 
 from nti.app.contenttypes.completion.tests import CompletionTestLayer
 
+from nti.app.contenttypes.completion.tests.interfaces import ITestPersistentCompletableItem
+
 from nti.app.contenttypes.completion.tests.test_models import PersistentCompletableItem
 from nti.app.contenttypes.completion.tests.test_models import PersistentCompletionContext
 
 from nti.app.testing.application_webtest import ApplicationLayerTest
 
 from nti.app.testing.decorators import WithSharedApplicationMockDS
+
+from nti.contenttypes.completion.interfaces import ICompletionContext
 
 from nti.contenttypes.completion.policies import CompletableItemAggregateCompletionPolicy
 
@@ -38,6 +44,8 @@ from nti.dataserver.tests import mock_dataserver
 from nti.dataserver.users import User
 
 from nti.externalization.externalization import StandardExternalFields
+
+from nti.ntiids.ntiids import find_object_with_ntiid
 
 from nti.ntiids.oids import to_external_ntiid_oid
 
@@ -168,4 +176,30 @@ class TestCompletableRequiredViews(ApplicationLayerTest):
         res = self.testapp.get(not_required_url).json_body
         assert_that(res[ITEMS], has_length(0))
 
+        # Get completable, validation required state
+        @component.adapter(ITestPersistentCompletableItem)
+        @interface.implementer(ICompletionContext)
+        def FixedCompletionContextAdapter(unused_item):
+            return find_object_with_ntiid(context_ntiid)
+
+        try:
+            component.getSiteManager().registerAdapter(FixedCompletionContextAdapter,
+                                                       (ITestPersistentCompletableItem,),
+                                                       ICompletionContext)
+            completable_url = '/dataserver2/Objects/%s' % item_ntiid1
+            comp_res = self.testapp.get(completable_url).json_body
+            assert_that(comp_res, has_entries('CompletionDefaultState', True,
+                                              'CompletionRequired', False))
+
+            self.testapp.put_json(required_url, {u'ntiid': item_ntiid1})
+            comp_res = self.testapp.get(completable_url).json_body
+            assert_that(comp_res, has_entries('CompletionDefaultState', False,
+                                              'CompletionRequired', True))
+
+            self.testapp.put_json(not_required_url, {u'ntiid': item_ntiid1})
+            comp_res = self.testapp.get(completable_url).json_body
+            assert_that(comp_res, has_entries('CompletionDefaultState', False,
+                                              'CompletionRequired', False))
+        finally:
+            component.getGlobalSiteManager().unregisterAdapter(FixedCompletionContextAdapter)
 

@@ -133,7 +133,10 @@ class AbstractRequiredUpdateView(AbstractCompletionRequiredView,
             logger.warn('Completable item not found with ntiid (%s)', key)
             raise_error({'message': _(u"Object not found for ntiid."),
                          'code': 'CompletableItemNotFoundError'})
-        logger.info('Adding key to completion %s container for context.', self.LOG_MESSAGE)
+
+        # FIXME: Validate ICompletableItem
+        logger.info('Adding key to completion %s container for context.',
+                    self.LOG_MESSAGE)
         return item
 
     def _do_call(self):
