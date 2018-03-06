@@ -133,4 +133,3 @@ class _CompletableItemDecorator(AbstractAuthenticatedRequestAwareDecorator):
         result['CompletionRequired'] = is_required
         # We're default if we are not explicitly required/not-required
         result['CompletionDefaultState'] = default_state
-

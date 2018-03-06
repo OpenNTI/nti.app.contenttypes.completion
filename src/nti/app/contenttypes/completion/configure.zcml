@@ -10,6 +10,12 @@
 
 	<include package="nti.contenttypes.completion" />
 
+    <!-- IUser completion adapter -->
+    <adapter factory="nti.contenttypes.completion.adapters._context_to_principal_container"
+             provides="nti.contenttypes.completion.interfaces.IPrincipalCompletedItemContainer"
+             for="nti.coremetadata.interfaces.IUser
+                  nti.contenttypes.completion.interfaces.ICompletionContext" />
+
     <!-- Decorators -->
     <subscriber factory=".decorators._CompletionContextAdminDecorator"
                 provides="nti.externalization.interfaces.IExternalMappingDecorator"
