@@ -18,6 +18,7 @@ from zope.location.interfaces import ILocation
 from nti.app.contenttypes.completion import COMPLETION_POLICY_VIEW_NAME
 from nti.app.contenttypes.completion import COMPLETION_REQUIRED_VIEW_NAME
 from nti.app.contenttypes.completion import COMPLETION_NOT_REQUIRED_VIEW_NAME
+from nti.app.contenttypes.completion import DEFAULT_REQUIRED_POLICY_PATH_NAME
 
 from nti.app.renderers.decorators import AbstractAuthenticatedRequestAwareDecorator
 
@@ -86,7 +87,8 @@ class _CompletionContextSettingsDecorator(AbstractAuthenticatedRequestAwareDecor
     def _do_decorate_external(self, context, result):
         _links = result.setdefault(LINKS, [])
         for name in (COMPLETION_REQUIRED_VIEW_NAME,
-                     COMPLETION_NOT_REQUIRED_VIEW_NAME):
+                     COMPLETION_NOT_REQUIRED_VIEW_NAME,
+                     DEFAULT_REQUIRED_POLICY_PATH_NAME):
             link = Link(context,
                         rel=name,
                         elements=('@@%s' % name,))

@@ -24,6 +24,7 @@ from nti.app.contenttypes.completion import MessageFactory
 from nti.app.contenttypes.completion import COMPLETION_POLICY_VIEW_NAME
 from nti.app.contenttypes.completion import COMPLETION_REQUIRED_VIEW_NAME
 from nti.app.contenttypes.completion import COMPLETION_NOT_REQUIRED_VIEW_NAME
+from nti.app.contenttypes.completion import DEFAULT_REQUIRED_POLICY_PATH_NAME
 
 from nti.app.externalization.error import raise_json_error
 

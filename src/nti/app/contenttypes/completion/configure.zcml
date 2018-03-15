@@ -10,6 +10,13 @@
 
 	<include package="nti.contenttypes.completion" />
 
+    <!-- Adapters -->
+    <adapter name="DefaultRequiredPolicy"
+             for="nti.contenttypes.completion.interfaces.ICompletionContext
+                  pyramid.interfaces.IRequest"
+             factory=".views.policy_views.DefaultRequiredPolicyPathAdapter"
+             provides="zope.traversing.interfaces.IPathAdapter" />
+
     <!-- IUser completion adapter -->
     <adapter factory="nti.contenttypes.completion.adapters._context_to_principal_container"
              provides="nti.contenttypes.completion.interfaces.IPrincipalCompletedItemContainer"
