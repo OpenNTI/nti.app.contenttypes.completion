@@ -12,11 +12,18 @@ from pyramid import httpexceptions as hexc
 
 from pyramid.view import view_config
 
+from zope import interface
+
+from zope.container.contained import Contained
+
+from zope.traversing.interfaces import IPathAdapter
+
 from nti.app.base.abstract_views import AbstractAuthenticatedView
 
 from nti.app.contenttypes.completion.views import MessageFactory as _
 
 from nti.app.contenttypes.completion.views import COMPLETION_POLICY_VIEW_NAME
+from nti.app.contenttypes.completion.views import DEFAULT_REQUIRED_POLICY_PATH_NAME
 
 from nti.app.externalization.view_mixins import ModeledContentUploadRequestUtilsMixin
 
@@ -24,11 +31,53 @@ from nti.appserver.ugd_edit_views import UGDPutView
 
 from nti.contenttypes.completion.interfaces import ICompletionContext
 from nti.contenttypes.completion.interfaces import ICompletableItemCompletionPolicy
+from nti.contenttypes.completion.interfaces import ICompletableItemDefaultRequiredPolicy
 from nti.contenttypes.completion.interfaces import ICompletionContextCompletionPolicyContainer
 
 from nti.dataserver import authorization as nauth
 
 logger = __import__('logging').getLogger(__name__)
+
+
+@interface.implementer(IPathAdapter)
+class DefaultRequiredPolicyPathAdapter(Contained):
+
+    __name__ = DEFAULT_REQUIRED_POLICY_PATH_NAME
+
+    def __init__(self, context, request):
+        self.context = context
+        self.request = request
+        self.__parent__ = context
+
+
+@view_config(route_name='objects.generic.traversal',
+             renderer='rest',
+             context=DefaultRequiredPolicyPathAdapter,
+             permission=nauth.ACT_UPDATE,
+             request_method='PUT')
+class DefaultRequiredPolicyPutView(UGDPutView):
+    """
+    A view to update the :class:`ICompletableItemDefaultRequiredPolicy`.
+    """
+
+    def _get_object_to_update(self):
+        completion_context = self.context.context
+        return ICompletableItemDefaultRequiredPolicy(completion_context)
+
+
+@view_config(route_name='objects.generic.traversal',
+             renderer='rest',
+             context=DefaultRequiredPolicyPathAdapter,
+             permission=nauth.ACT_UPDATE,
+             request_method='GET')
+class DefaultRequiredPolicyView(AbstractAuthenticatedView):
+    """
+    A view to fetch the :class:`ICompletableItemDefaultRequiredPolicy`.
+    """
+
+    def __call__(self):
+        completion_context = self.context.context
+        return ICompletableItemDefaultRequiredPolicy(completion_context)
 
 
 class AbstractCompletionContextPolicyView(AbstractAuthenticatedView):

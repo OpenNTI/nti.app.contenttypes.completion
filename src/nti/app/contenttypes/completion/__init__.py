@@ -14,3 +14,4 @@ MessageFactory = zope.i18nmessageid.MessageFactory(__name__)
 COMPLETION_POLICY_VIEW_NAME = u'CompletionPolicy'
 COMPLETION_REQUIRED_VIEW_NAME = u'CompletionRequired'
 COMPLETION_NOT_REQUIRED_VIEW_NAME = u'CompletionNotRequired'
+DEFAULT_REQUIRED_POLICY_PATH_NAME = u'DefaultRequiredPolicy'
