@@ -98,7 +98,7 @@ class _CompletionContextSettingsDecorator(AbstractAuthenticatedRequestAwareDecor
 
 @component.adapter(ICompletableItem)
 @interface.implementer(IExternalMappingDecorator)
-class _CompletableItemDecorator(AbstractAuthenticatedRequestAwareDecorator):
+class CompletableItemDecorator(AbstractAuthenticatedRequestAwareDecorator):
     """
     Decorate the :class:`ICompletableItem` with requirement information. This
     requires being able to adapt :class:`ICompletableItem` to the correct
@@ -106,7 +106,7 @@ class _CompletableItemDecorator(AbstractAuthenticatedRequestAwareDecorator):
     """
 
     def __init__(self, context, request):
-        super(_CompletableItemDecorator, self).__init__(context, request)
+        super(CompletableItemDecorator, self).__init__(context, request)
         self.context = context
 
     @Lazy
