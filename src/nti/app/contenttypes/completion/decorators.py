@@ -128,10 +128,12 @@ class CompletableItemDecorator(AbstractAuthenticatedRequestAwareDecorator):
         default_policy = ICompletableItemDefaultRequiredPolicy(self.completion_context)
         is_required = required_container.is_item_required(context)
         is_not_required = required_container.is_item_optional(context)
-        default_state = not is_required and not is_not_required
-        if default_state:
-            item_mime_type = getattr(context, 'mime_type', '')
-            is_required = item_mime_type in default_policy.mime_types
+        is_default_state = not is_required and not is_not_required
+        item_mime_type = getattr(context, 'mime_type', '')
+        default_required_state = item_mime_type in default_policy.mime_types
+        if is_default_state:
+            is_required = default_required_state
         result['CompletionRequired'] = is_required
+        result['CompletionDefaultState'] = default_required_state
         # We're default if we are not explicitly required/not-required
-        result['CompletionDefaultState'] = default_state
+        result['IsCompletionDefaultState'] = is_default_state
