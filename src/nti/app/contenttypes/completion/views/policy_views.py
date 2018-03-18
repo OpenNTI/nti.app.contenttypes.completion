@@ -25,12 +25,14 @@ from nti.app.contenttypes.completion.views import MessageFactory as _
 from nti.app.contenttypes.completion.views import COMPLETION_POLICY_VIEW_NAME
 from nti.app.contenttypes.completion.views import DEFAULT_REQUIRED_POLICY_PATH_NAME
 
+from nti.app.contenttypes.completion.views import CompletionPathAdapter
+
 from nti.app.externalization.view_mixins import ModeledContentUploadRequestUtilsMixin
 
 from nti.appserver.ugd_edit_views import UGDPutView
 
-from nti.contenttypes.completion.interfaces import ICompletionContext
 from nti.contenttypes.completion.interfaces import ICompletableItemCompletionPolicy
+from nti.contenttypes.completion.interfaces import ICompletionContextCompletionPolicy
 from nti.contenttypes.completion.interfaces import ICompletableItemDefaultRequiredPolicy
 from nti.contenttypes.completion.interfaces import ICompletionContextCompletionPolicyContainer
 
@@ -45,7 +47,9 @@ class DefaultRequiredPolicyPathAdapter(Contained):
     __name__ = DEFAULT_REQUIRED_POLICY_PATH_NAME
 
     def __init__(self, context, request):
+        # Context is our CompletionPathAdapter
         self.context = context
+        self.completion_context = context.context
         self.request = request
         self.__parent__ = context
 
@@ -61,7 +65,7 @@ class DefaultRequiredPolicyPutView(UGDPutView):
     """
 
     def _get_object_to_update(self):
-        completion_context = self.context.context
+        completion_context = self.context.completion_context
         return ICompletableItemDefaultRequiredPolicy(completion_context)
 
 
@@ -76,7 +80,7 @@ class DefaultRequiredPolicyView(AbstractAuthenticatedView):
     """
 
     def __call__(self):
-        completion_context = self.context.context
+        completion_context = self.context.completion_context
         return ICompletableItemDefaultRequiredPolicy(completion_context)
 
 
@@ -89,7 +93,7 @@ class AbstractCompletionContextPolicyView(AbstractAuthenticatedView):
 
     @property
     def completion_context(self):
-        return self.context
+        return self.context.context
 
     @property
     def item_ntiid(self):
@@ -100,7 +104,7 @@ class AbstractCompletionContextPolicyView(AbstractAuthenticatedView):
 @view_config(route_name='objects.generic.traversal',
              renderer='rest',
              name=COMPLETION_POLICY_VIEW_NAME,
-             context=ICompletionContext,
+             context=CompletionPathAdapter,
              permission=nauth.ACT_UPDATE,
              request_method='GET')
 class CompletionContextPolicyView(AbstractCompletionContextPolicyView):
@@ -123,7 +127,7 @@ class CompletionContextPolicyView(AbstractCompletionContextPolicyView):
 
 @view_config(route_name='objects.generic.traversal',
              renderer='rest',
-             context=ICompletionContext,
+             context=CompletionPathAdapter,
              name=COMPLETION_POLICY_VIEW_NAME,
              permission=nauth.ACT_UPDATE,
              request_method='PUT')
@@ -139,6 +143,7 @@ class CompletionContextPolicyUpdateView(AbstractCompletionContextPolicyView,
         item_ntiid = self.item_ntiid
         if not item_ntiid:
             self.completion_container.context_policy = new_policy
+            interface.alsoProvides(new_policy, ICompletionContextCompletionPolicy)
             new_policy.__parent__ = self.completion_container
         else:
             logger.info('Added completable policy for %s', item_ntiid)
@@ -163,7 +168,7 @@ class CompletionPolicyPutView(UGDPutView):
 @view_config(route_name='objects.generic.traversal',
              renderer='rest',
              name=COMPLETION_POLICY_VIEW_NAME,
-             context=ICompletionContext,
+             context=CompletionPathAdapter,
              permission=nauth.ACT_UPDATE,
              request_method='DELETE')
 class CompletionPolicyDeleteView(AbstractCompletionContextPolicyView):

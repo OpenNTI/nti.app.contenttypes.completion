@@ -16,6 +16,9 @@ from requests.structures import CaseInsensitiveDict
 
 from nti.app.base.abstract_views import AbstractAuthenticatedView
 
+from nti.app.contenttypes.completion.views import CompletableItemsPathAdapter
+
+from nti.app.contenttypes.completion.views import COMPLETION_DEFAULT_VIEW_NAME
 from nti.app.contenttypes.completion.views import COMPLETION_REQUIRED_VIEW_NAME
 from nti.app.contenttypes.completion.views import COMPLETION_NOT_REQUIRED_VIEW_NAME
 
@@ -24,6 +27,7 @@ from nti.app.contenttypes.completion.views import MessageFactory as _
 
 from nti.app.externalization.view_mixins import ModeledContentUploadRequestUtilsMixin
 
+from nti.contenttypes.completion.interfaces import ICompletableItem
 from nti.contenttypes.completion.interfaces import ICompletionContext
 from nti.contenttypes.completion.interfaces import ICompletableItemContainer
 
@@ -36,6 +40,8 @@ from nti.externalization.internalization import find_factory_for
 from nti.externalization.internalization import update_from_external_object
 
 from nti.ntiids.ntiids import find_object_with_ntiid
+
+from nti.traversal.traversal import find_interface
 
 ITEMS = StandardExternalFields.ITEMS
 TOTAL = StandardExternalFields.TOTAL
@@ -52,7 +58,7 @@ class AbstractCompletionRequiredView(AbstractAuthenticatedView):
 
     @property
     def completion_context(self):
-        return self.context
+        return find_interface(self.context, ICompletionContext)
 
     @property
     def item_ntiid(self):
@@ -62,7 +68,28 @@ class AbstractCompletionRequiredView(AbstractAuthenticatedView):
 
 @view_config(route_name='objects.generic.traversal',
              renderer='rest',
-             context=ICompletionContext,
+             context=CompletableItemsPathAdapter,
+             name=COMPLETION_DEFAULT_VIEW_NAME,
+             permission=nauth.ACT_UPDATE,
+             request_method='GET')
+class CompletionDefaultView(AbstractCompletionRequiredView):
+    """
+    A view to fetch the default required :class:`ICompletableItem` objects for
+    the :class:`ICompletionContext`.
+    """
+
+    def __call__(self):
+        # TODO: Need to return set of default ICompletableItems
+        result = LocatedExternalDict()
+        required_keys = self.completable_container.get_required_keys()
+        result[ITEMS] = required_keys
+        result[TOTAL] = result[ITEM_COUNT] = len(required_keys)
+        return result
+
+
+@view_config(route_name='objects.generic.traversal',
+             renderer='rest',
+             context=CompletableItemsPathAdapter,
              name=COMPLETION_REQUIRED_VIEW_NAME,
              permission=nauth.ACT_UPDATE,
              request_method='GET')
@@ -82,7 +109,7 @@ class CompletionRequiredView(AbstractCompletionRequiredView):
 
 @view_config(route_name='objects.generic.traversal',
              renderer='rest',
-             context=ICompletionContext,
+             context=CompletableItemsPathAdapter,
              name=COMPLETION_NOT_REQUIRED_VIEW_NAME,
              permission=nauth.ACT_UPDATE,
              request_method='GET')
@@ -111,6 +138,18 @@ class AbstractRequiredUpdateView(AbstractCompletionRequiredView,
     def _get_keys(self):
         raise NotImplementedError()
 
+    def _get_item_for_key(self, key):
+        item = find_object_with_ntiid(key)
+        if item is None:
+            logger.warn('Completable item not found with ntiid (%s)', key)
+            raise_error({'message': _(u"Object not found for ntiid."),
+                         'code': 'CompletableItemNotFoundError'})
+        if not ICompletableItem.providedBy(item):
+            logger.warn('Item is not ICompletableItem (%s)', key)
+            raise_error({'message': _(u"Item is not completable.."),
+                         'code': 'InvalidCompletableItemError'})
+        return item
+
     def _get_item(self):
         key = None
         item_json = self.readInput()
@@ -128,14 +167,10 @@ class AbstractRequiredUpdateView(AbstractCompletionRequiredView,
         if not key:
             raise_error({'message': _(u"No ntiid given for completion requirement update."),
                          'code': 'NoNTIIDGivenError'})
-        item = find_object_with_ntiid(key)
-        if item is None:
-            logger.warn('Completable item not found with ntiid (%s)', key)
-            raise_error({'message': _(u"Object not found for ntiid."),
-                         'code': 'CompletableItemNotFoundError'})
+        item = self._get_item_for_key(key)
 
-        # FIXME: Validate ICompletableItem
-        logger.info('Adding key to completion %s container for context.',
+        logger.info('Adding key to completion %s container for context (key=%s)',
+                    key,
                     self.LOG_MESSAGE)
         return item
 
@@ -151,7 +186,36 @@ class AbstractRequiredUpdateView(AbstractCompletionRequiredView,
 
 @view_config(route_name='objects.generic.traversal',
              renderer='rest',
-             context=ICompletionContext,
+             context=CompletableItemsPathAdapter,
+             name=COMPLETION_DEFAULT_VIEW_NAME,
+             permission=nauth.ACT_UPDATE,
+             request_method='PUT')
+class CompletionDefaultUpdateView(AbstractRequiredUpdateView):
+    """
+    A view to revert an item to `Default` required state for a
+    :class:`ICompletionContext`.
+    """
+
+    LOG_MESSAGE = 'default'
+
+    def _get_item_for_key(self, key):
+        # Since we're just removing from containers, we do not care if the
+        # object is retrievable.
+        return key
+
+    def _update_container(self, item):
+        removed_optional = self.completable_container.remove_optional_item(item)
+        removed_required = self.completable_container.remove_required_item(item)
+        return removed_optional or removed_required
+
+    def _get_keys(self):
+        # TODO: Ideally, we'll return all default keys
+        return self.completable_container.get_required_keys()
+
+
+@view_config(route_name='objects.generic.traversal',
+             renderer='rest',
+             context=CompletableItemsPathAdapter,
              name=COMPLETION_REQUIRED_VIEW_NAME,
              permission=nauth.ACT_UPDATE,
              request_method='PUT')
@@ -173,7 +237,7 @@ class CompletionRequiredUpdateView(AbstractRequiredUpdateView):
 
 @view_config(route_name='objects.generic.traversal',
              renderer='rest',
-             context=ICompletionContext,
+             context=CompletableItemsPathAdapter,
              name=COMPLETION_NOT_REQUIRED_VIEW_NAME,
              permission=nauth.ACT_UPDATE,
              request_method='PUT')
@@ -196,7 +260,7 @@ class CompletionNotRequiredUpdateView(AbstractRequiredUpdateView):
 
 @view_config(route_name='objects.generic.traversal',
              renderer='rest',
-             context=ICompletionContext,
+             context=CompletableItemsPathAdapter,
              name=COMPLETION_REQUIRED_VIEW_NAME,
              permission=nauth.ACT_UPDATE,
              request_method='DELETE')
@@ -212,7 +276,7 @@ class CompletionRequiredDeleteView(AbstractCompletionRequiredView):
 
 @view_config(route_name='objects.generic.traversal',
              renderer='rest',
-             context=ICompletionContext,
+             context=CompletableItemsPathAdapter,
              name=COMPLETION_NOT_REQUIRED_VIEW_NAME,
              permission=nauth.ACT_UPDATE,
              request_method='DELETE')

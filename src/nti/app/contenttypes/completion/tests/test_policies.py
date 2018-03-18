@@ -17,6 +17,7 @@ from hamcrest import contains_inanyorder
 
 from zope import interface
 
+from nti.app.contenttypes.completion import COMPLETION_PATH_NAME
 from nti.app.contenttypes.completion import COMPLETION_POLICY_VIEW_NAME
 from nti.app.contenttypes.completion import DEFAULT_REQUIRED_POLICY_PATH_NAME
 
@@ -53,7 +54,6 @@ class TestCompletionPolicyViews(ApplicationLayerTest):
 
     def _set_context_policy(self, context_ntiid):
         full_data = {u'percentage': None,
-                     u'count': None,
                      u'MimeType': self.aggregate_mimetype}
 
         context_url = '/dataserver2/Objects/%s' % context_ntiid
@@ -61,8 +61,16 @@ class TestCompletionPolicyViews(ApplicationLayerTest):
         self.require_link_href_with_rel(context_res,
                                         COMPLETION_POLICY_VIEW_NAME)
 
-        url = '/dataserver2/Objects/%s/%s' % (context_ntiid, COMPLETION_POLICY_VIEW_NAME)
+        url = '/dataserver2/Objects/%s/%s/%s' % (context_ntiid,
+                                                 COMPLETION_PATH_NAME,
+                                                 COMPLETION_POLICY_VIEW_NAME)
         return self.testapp.put_json(url, full_data)
+
+    def _get_completion_policy(self, context_ntiid):
+        url = '/dataserver2/Objects/%s/%s/%s' % (context_ntiid,
+                                                 COMPLETION_PATH_NAME,
+                                                 COMPLETION_POLICY_VIEW_NAME)
+        return self.testapp.get(url)
 
     @WithSharedApplicationMockDS(users=True, testapp=True, default_authenticate=True)
     def test_completion_policy(self):
@@ -84,11 +92,12 @@ class TestCompletionPolicyViews(ApplicationLayerTest):
         non_admin_environ = self._make_extra_environ(non_admin_username)
 
         full_data = {u'percentage': None,
-                     u'count': None,
                      u'MimeType': self.aggregate_mimetype}
 
         # Empty
-        url = '/dataserver2/Objects/%s/%s' % (context_ntiid, COMPLETION_POLICY_VIEW_NAME)
+        url = '/dataserver2/Objects/%s/%s/%s' % (context_ntiid,
+                                                 COMPLETION_PATH_NAME,
+                                                 COMPLETION_POLICY_VIEW_NAME)
         self.testapp.get(url, status=404)
         self.testapp.get(url, extra_environ=non_admin_environ, status=403)
 
@@ -99,28 +108,16 @@ class TestCompletionPolicyViews(ApplicationLayerTest):
         last_last_mod = res[LAST_MODIFIED]
         assert_that(res[CREATED_TIME], not_none())
         assert_that(last_last_mod, not_none())
-        assert_that(res['count'], none())
         assert_that(res['percentage'], none())
         assert_that(policy_href, not_none())
 
         # Put
-        res = self.testapp.put_json(policy_href, {'count': 10})
-        res = res.json_body
-        assert_that(res[CREATED_TIME], not_none())
-        assert_that(res[LAST_MODIFIED], not_none())
-        assert_that(res[LAST_MODIFIED], is_not(last_last_mod))
-        last_last_mod = res[LAST_MODIFIED]
-        assert_that(res['count'], is_(10))
-        assert_that(res['percentage'], none())
-        assert_that(policy_href, not_none())
-
         res = self.testapp.put_json(policy_href, {'percentage': .5})
         res = res.json_body
         assert_that(res[CREATED_TIME], not_none())
         assert_that(res[LAST_MODIFIED], not_none())
         assert_that(res[LAST_MODIFIED], is_not(last_last_mod))
         last_last_mod = res[LAST_MODIFIED]
-        assert_that(res['count'], is_(10))
         assert_that(res['percentage'], is_(.5))
         assert_that(policy_href, not_none())
 
@@ -130,22 +127,18 @@ class TestCompletionPolicyViews(ApplicationLayerTest):
         assert_that(res[CREATED_TIME], not_none())
         assert_that(res[LAST_MODIFIED], not_none())
         assert_that(res[LAST_MODIFIED], is_(last_last_mod))
-        assert_that(res['count'], is_(10))
         assert_that(res['percentage'], is_(.5))
         assert_that(policy_href, not_none())
 
         # Validation
-        self.testapp.put_json(policy_href, {'count': 'a'}, status=422)
-        self.testapp.put_json(policy_href, {'count': -5}, status=422)
         self.testapp.put_json(policy_href, {'percentage': 1.5}, status=422)
         self.testapp.put_json(policy_href, {'percentage': -.5}, status=422)
-        self.testapp.put_json(policy_href, {'count': None})
         self.testapp.put_json(policy_href, {'percentage': None})
 
         self.testapp.put_json(url, full_data,
                               extra_environ=non_admin_environ,
                               status=403)
-        self.testapp.put_json(policy_href, {'count': 10},
+        self.testapp.put_json(policy_href, {'percentage': .5},
                               extra_environ=non_admin_environ,
                               status=403)
 
@@ -162,31 +155,22 @@ class TestCompletionPolicyViews(ApplicationLayerTest):
         last_last_mod = res[LAST_MODIFIED]
         assert_that(res[CREATED_TIME], not_none())
         assert_that(last_last_mod, not_none())
-        assert_that(res['count'], none())
         assert_that(res['percentage'], none())
         assert_that(sub_policy_href, not_none())
 
         assert_that(sub_policy_href, is_not(policy_href))
 
         # Put
-        res = self.testapp.put_json(sub_policy_href, {'count': 10})
-        res = res.json_body
-        assert_that(res['count'], is_(10))
-        assert_that(res['percentage'], none())
-
         res = self.testapp.put_json(sub_policy_href, {'percentage': .5})
         res = res.json_body
-        assert_that(res['count'], is_(10))
         assert_that(res['percentage'], is_(.5))
 
         res = self.testapp.get(sub_url)
         res = res.json_body
-        assert_that(res['count'], is_(10))
         assert_that(res['percentage'], is_(.5))
 
         res = self.testapp.get(url)
         res = res.json_body
-        assert_that(res['count'], none())
         assert_that(res['percentage'], none())
 
         self.testapp.get(sub_url, extra_environ=non_admin_environ, status=403)
@@ -218,13 +202,13 @@ class TestCompletionPolicyViews(ApplicationLayerTest):
         non_admin_environ = self._make_extra_environ(non_admin_username)
 
         self._set_context_policy(context_ntiid)
-        context_url = '/dataserver2/Objects/%s' % context_ntiid
-        context_res = self.testapp.get(context_url).json_body
-        self.require_link_href_with_rel(context_res,
+        policy_res = self._get_completion_policy(context_ntiid).json_body
+        self.require_link_href_with_rel(policy_res,
                                         DEFAULT_REQUIRED_POLICY_PATH_NAME)
 
-        url = '/dataserver2/Objects/%s/%s' % (context_ntiid,
-                                              DEFAULT_REQUIRED_POLICY_PATH_NAME)
+        url = '/dataserver2/Objects/%s/%s/%s' % (context_ntiid,
+                                                 COMPLETION_PATH_NAME,
+                                                 DEFAULT_REQUIRED_POLICY_PATH_NAME)
 
         # Empty
         self.testapp.get(url, extra_environ=non_admin_environ, status=403)

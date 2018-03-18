@@ -21,7 +21,10 @@ from zope.traversing.interfaces import IPathAdapter
 
 from nti.app.contenttypes.completion import MessageFactory
 
+from nti.app.contenttypes.completion import COMPLETION_PATH_NAME
+from nti.app.contenttypes.completion import COMPLETABLE_ITEMS_PATH_NAME
 from nti.app.contenttypes.completion import COMPLETION_POLICY_VIEW_NAME
+from nti.app.contenttypes.completion import COMPLETION_DEFAULT_VIEW_NAME
 from nti.app.contenttypes.completion import COMPLETION_REQUIRED_VIEW_NAME
 from nti.app.contenttypes.completion import COMPLETION_NOT_REQUIRED_VIEW_NAME
 from nti.app.contenttypes.completion import DEFAULT_REQUIRED_POLICY_PATH_NAME
@@ -34,3 +37,25 @@ def raise_error(data, tb=None,
                 request=None):
     request = request or get_current_request()
     raise_json_error(request, factory, data, tb)
+
+
+@interface.implementer(IPathAdapter)
+class CompletionPathAdapter(Contained):
+
+    __name__ = COMPLETION_PATH_NAME
+
+    def __init__(self, context, request):
+        self.context = context
+        self.request = request
+        self.__parent__ = context
+
+
+@interface.implementer(IPathAdapter)
+class CompletableItemsPathAdapter(Contained):
+
+    __name__ = COMPLETABLE_ITEMS_PATH_NAME
+
+    def __init__(self, context, request):
+        self.context = context
+        self.request = request
+        self.__parent__ = context
