@@ -18,7 +18,10 @@ from hamcrest import contains_inanyorder
 from zope import interface
 from zope import component
 
+from nti.app.contenttypes.completion import COMPLETION_PATH_NAME
+from nti.app.contenttypes.completion import COMPLETABLE_ITEMS_PATH_NAME
 from nti.app.contenttypes.completion import COMPLETION_POLICY_VIEW_NAME
+from nti.app.contenttypes.completion import COMPLETION_DEFAULT_VIEW_NAME
 from nti.app.contenttypes.completion import COMPLETION_REQUIRED_VIEW_NAME
 from nti.app.contenttypes.completion import COMPLETION_NOT_REQUIRED_VIEW_NAME
 
@@ -96,26 +99,35 @@ class TestCompletableRequiredViews(ApplicationLayerTest):
                                   COMPLETION_NOT_REQUIRED_VIEW_NAME)
 
         # Set policy and now we have rels
-        url = '/dataserver2/Objects/%s/%s' % (context_ntiid,
-                                              COMPLETION_POLICY_VIEW_NAME)
-        self.testapp.put_json(url, {u'MimeType': aggregate_mimetype})
-        context_res = self.testapp.get(context_url).json_body
-        self.require_link_href_with_rel(context_res,
+        path_part = '%s/%s' % (COMPLETION_PATH_NAME, COMPLETABLE_ITEMS_PATH_NAME)
+        policy_url = '/dataserver2/Objects/%s/%s/%s' % (context_ntiid,
+                                                        COMPLETION_PATH_NAME,
+                                                        COMPLETION_POLICY_VIEW_NAME)
+        self.testapp.put_json(policy_url, {u'MimeType': aggregate_mimetype})
+        policy_res = self.testapp.get(policy_url).json_body
+        self.require_link_href_with_rel(policy_res,
                                         COMPLETION_REQUIRED_VIEW_NAME)
-        self.require_link_href_with_rel(context_res,
+        self.require_link_href_with_rel(policy_res,
                                         COMPLETION_NOT_REQUIRED_VIEW_NAME)
 
-
-        required_url = '/dataserver2/Objects/%s/%s' % (context_ntiid,
-                                                       COMPLETION_REQUIRED_VIEW_NAME)
-        not_required_url = '/dataserver2/Objects/%s/%s' % (context_ntiid,
-                                                           COMPLETION_NOT_REQUIRED_VIEW_NAME)
+        default_url = '/dataserver2/Objects/%s/%s/%s' % (context_ntiid,
+                                                         path_part,
+                                                         COMPLETION_DEFAULT_VIEW_NAME)
+        required_url = '/dataserver2/Objects/%s/%s/%s' % (context_ntiid,
+                                                          path_part,
+                                                          COMPLETION_REQUIRED_VIEW_NAME)
+        not_required_url = '/dataserver2/Objects/%s/%s/%s' % (context_ntiid,
+                                                              path_part,
+                                                              COMPLETION_NOT_REQUIRED_VIEW_NAME)
 
         # Empty
         res = self.testapp.get(required_url).json_body
         assert_that(res[ITEMS], has_length(0))
 
         res = self.testapp.get(not_required_url).json_body
+        assert_that(res[ITEMS], has_length(0))
+
+        res = self.testapp.get(default_url).json_body
         assert_that(res[ITEMS], has_length(0))
 
         self.testapp.get(required_url, extra_environ=non_admin_environ, status=403)
@@ -188,17 +200,27 @@ class TestCompletableRequiredViews(ApplicationLayerTest):
                                                        ICompletionContext)
             completable_url = '/dataserver2/Objects/%s' % item_ntiid1
             comp_res = self.testapp.get(completable_url).json_body
-            assert_that(comp_res, has_entries('CompletionDefaultState', True,
+            assert_that(comp_res, has_entries('IsCompletionDefaultState', True,
+                                              'CompletionDefaultState', False,
                                               'CompletionRequired', False))
 
             self.testapp.put_json(required_url, {u'ntiid': item_ntiid1})
             comp_res = self.testapp.get(completable_url).json_body
             assert_that(comp_res, has_entries('CompletionDefaultState', False,
+                                              'IsCompletionDefaultState', False,
                                               'CompletionRequired', True))
 
             self.testapp.put_json(not_required_url, {u'ntiid': item_ntiid1})
             comp_res = self.testapp.get(completable_url).json_body
-            assert_that(comp_res, has_entries('CompletionDefaultState', False,
+            assert_that(comp_res, has_entries('IsCompletionDefaultState', False,
+                                              'CompletionDefaultState', False,
+                                              'CompletionRequired', False))
+
+            # Back to default
+            self.testapp.put_json(default_url, {u'ntiid': item_ntiid1})
+            comp_res = self.testapp.get(completable_url).json_body
+            assert_that(comp_res, has_entries('IsCompletionDefaultState', True,
+                                              'CompletionDefaultState', False,
                                               'CompletionRequired', False))
         finally:
             component.getGlobalSiteManager().unregisterAdapter(FixedCompletionContextAdapter)

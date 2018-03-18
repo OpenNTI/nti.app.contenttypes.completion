@@ -10,9 +10,25 @@
 
 	<include package="nti.contenttypes.completion" />
 
-    <!-- Adapters -->
-    <adapter name="DefaultRequiredPolicy"
+    <!-- Path Adapters -->
+    <adapter name="Completion"
              for="nti.contenttypes.completion.interfaces.ICompletionContext
+                  pyramid.interfaces.IRequest"
+             factory=".views.CompletionPathAdapter"
+             provides="zope.traversing.interfaces.IPathAdapter" />
+
+    <adapter factory="nti.traversal.traversal.DefaultAdapterTraversable"
+                 for=".views.CompletionPathAdapter
+                      pyramid.interfaces.IRequest" />
+
+    <adapter name="CompletableItems"
+             for=".views.CompletionPathAdapter
+                  pyramid.interfaces.IRequest"
+             factory=".views.CompletableItemsPathAdapter"
+             provides="zope.traversing.interfaces.IPathAdapter" />
+
+    <adapter name="DefaultRequiredPolicy"
+             for=".views.CompletionPathAdapter
                   pyramid.interfaces.IRequest"
              factory=".views.policy_views.DefaultRequiredPolicyPathAdapter"
              provides="zope.traversing.interfaces.IPathAdapter" />
@@ -31,7 +47,7 @@
 
     <subscriber factory=".decorators._CompletionContextSettingsDecorator"
                 provides="nti.externalization.interfaces.IExternalMappingDecorator"
-                for="nti.contenttypes.completion.interfaces.ICompletionContext
+                for="nti.contenttypes.completion.interfaces.ICompletionContextCompletionPolicy
                      pyramid.interfaces.IRequest" />
 
     <subscriber factory=".decorators.CompletableItemDecorator"

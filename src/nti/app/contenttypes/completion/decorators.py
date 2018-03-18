@@ -15,7 +15,9 @@ from zope.cachedescriptors.property import Lazy
 
 from zope.location.interfaces import ILocation
 
+from nti.app.contenttypes.completion import COMPLETION_PATH_NAME
 from nti.app.contenttypes.completion import COMPLETION_POLICY_VIEW_NAME
+from nti.app.contenttypes.completion import COMPLETABLE_ITEMS_PATH_NAME
 from nti.app.contenttypes.completion import COMPLETION_REQUIRED_VIEW_NAME
 from nti.app.contenttypes.completion import COMPLETION_NOT_REQUIRED_VIEW_NAME
 from nti.app.contenttypes.completion import DEFAULT_REQUIRED_POLICY_PATH_NAME
@@ -27,6 +29,7 @@ from nti.appserver.pyramid_authorization import has_permission
 from nti.contenttypes.completion.interfaces import ICompletableItem
 from nti.contenttypes.completion.interfaces import ICompletionContext
 from nti.contenttypes.completion.interfaces import ICompletableItemContainer
+from nti.contenttypes.completion.interfaces import ICompletionContextCompletionPolicy
 from nti.contenttypes.completion.interfaces import ICompletableItemDefaultRequiredPolicy
 from nti.contenttypes.completion.interfaces import ICompletionContextCompletionPolicyContainer
 
@@ -38,6 +41,8 @@ from nti.externalization.interfaces import StandardExternalFields
 from nti.externalization.interfaces import IExternalMappingDecorator
 
 from nti.links.links import Link
+
+from nti.traversal.traversal import find_interface
 
 LINKS = StandardExternalFields.LINKS
 
@@ -64,34 +69,48 @@ class _CompletionContextAdminDecorator(AbstractAuthenticatedRequestAwareDecorato
         _links = result.setdefault(LINKS, [])
         link = Link(context,
                     rel=COMPLETION_POLICY_VIEW_NAME,
-                    elements=('@@%s' % COMPLETION_POLICY_VIEW_NAME,))
+                    elements=(COMPLETION_PATH_NAME,
+                              '@@%s' % COMPLETION_POLICY_VIEW_NAME,))
         interface.alsoProvides(link, ILocation)
         link.__name__ = ''
         link.__parent__ = context
         _links.append(link)
 
 
-@component.adapter(ICompletionContext)
+@component.adapter(ICompletionContextCompletionPolicy)
 @interface.implementer(IExternalMappingDecorator)
 class _CompletionContextSettingsDecorator(AbstractAuthenticatedRequestAwareDecorator):
     """
-    Decorate the :class:`ICompletionContext` with appropriate links for admins.
+    Decorate the :class:`ICompletionContextCompletionPolicy` with appropriate links for admins.
     """
 
     def _predicate(self, context, unused_result):
-        completion_policy = ICompletionContextCompletionPolicyContainer(context)
+        completion_context = find_interface(context, ICompletionContext)
+        completion_policy = ICompletionContextCompletionPolicyContainer(completion_context)
         return self._is_authenticated \
            and completion_policy.context_policy is not None \
            and _check_access(context, self.remoteUser, self.request)
 
     def _do_decorate_external(self, context, result):
+        context = find_interface(context, ICompletionContext)
         _links = result.setdefault(LINKS, [])
         for name in (COMPLETION_REQUIRED_VIEW_NAME,
-                     COMPLETION_NOT_REQUIRED_VIEW_NAME,
-                     DEFAULT_REQUIRED_POLICY_PATH_NAME):
+                     COMPLETION_NOT_REQUIRED_VIEW_NAME):
             link = Link(context,
                         rel=name,
-                        elements=('@@%s' % name,))
+                        elements=(COMPLETION_PATH_NAME,
+                                  COMPLETABLE_ITEMS_PATH_NAME,
+                                  '@@%s' % name,))
+            interface.alsoProvides(link, ILocation)
+            link.__name__ = ''
+            link.__parent__ = context
+            _links.append(link)
+
+        for name in (DEFAULT_REQUIRED_POLICY_PATH_NAME,):
+            link = Link(context,
+                        rel=name,
+                        elements=(COMPLETION_PATH_NAME,
+                                  '@@%s' % name,))
             interface.alsoProvides(link, ILocation)
             link.__name__ = ''
             link.__parent__ = context
