@@ -40,6 +40,8 @@ from nti.dataserver.authorization import is_admin_or_content_admin_or_site_admin
 from nti.externalization.interfaces import StandardExternalFields
 from nti.externalization.interfaces import IExternalMappingDecorator
 
+from nti.externalization.singleton import Singleton
+
 from nti.links.links import Link
 
 from nti.traversal.traversal import find_interface
@@ -52,6 +54,18 @@ logger = __import__('logging').getLogger(__name__)
 def _check_access(context, user, request):
     return     is_admin_or_content_admin_or_site_admin(user) \
             or has_permission(ACT_CONTENT_EDIT, context, request)
+
+
+@component.adapter(ICompletionContext)
+@interface.implementer(IExternalMappingDecorator)
+class _ContextCompletionPolicy(Singleton):
+    """
+    Decorates :class:`ICompletionContextCompletionPolicy`
+    """
+
+    def decorateExternalMapping(self, context, mapping):
+        mapping['CompletionPolicy'] = ICompletionContextCompletionPolicy(context,
+                                                                         None)
 
 
 @component.adapter(ICompletionContext)
@@ -81,7 +95,8 @@ class _CompletionContextAdminDecorator(AbstractAuthenticatedRequestAwareDecorato
 @interface.implementer(IExternalMappingDecorator)
 class _CompletionContextSettingsDecorator(AbstractAuthenticatedRequestAwareDecorator):
     """
-    Decorate the :class:`ICompletionContextCompletionPolicy` with appropriate links for admins.
+    Decorate the :class:`ICompletionContextCompletionPolicy` with appropriate
+    links for admins.
     """
 
     def _predicate(self, context, unused_result):
@@ -135,18 +150,17 @@ class CompletableItemDecorator(AbstractAuthenticatedRequestAwareDecorator):
         return ICompletionContext(self.context, None)
 
     def _predicate(self, unused_context, unused_result):
-        completion_policy = ICompletionContextCompletionPolicyContainer(self.completion_context,
-                                                                        None)
+        completion_policy = ICompletionContextCompletionPolicy(self.completion_context,
+                                                               None)
         return self._is_authenticated \
-           and self.completion_context is not None \
-           and completion_policy is not None \
-           and completion_policy.context_policy is not None
+           and completion_policy is not None
 
     def _do_decorate_external(self, context, result):
         required_container = ICompletableItemContainer(self.completion_context)
         default_policy = ICompletableItemDefaultRequiredPolicy(self.completion_context)
         is_required = required_container.is_item_required(context)
         is_not_required = required_container.is_item_optional(context)
+        # We're default if we are not explicitly required/not-required
         is_default_state = not is_required and not is_not_required
         item_mime_type = getattr(context, 'mime_type', '')
         default_required_state = item_mime_type in default_policy.mime_types
@@ -154,5 +168,4 @@ class CompletableItemDecorator(AbstractAuthenticatedRequestAwareDecorator):
             is_required = default_required_state
         result['CompletionRequired'] = is_required
         result['CompletionDefaultState'] = default_required_state
-        # We're default if we are not explicitly required/not-required
         result['IsCompletionDefaultState'] = is_default_state
