@@ -101,9 +101,10 @@ class _CompletionContextSettingsDecorator(AbstractAuthenticatedRequestAwareDecor
 
     def _predicate(self, context, unused_result):
         completion_context = find_interface(context, ICompletionContext)
-        completion_policy = ICompletionContextCompletionPolicyContainer(completion_context)
+        completion_policy = ICompletionContextCompletionPolicy(completion_context,
+                                                               None)
         return self._is_authenticated \
-           and completion_policy.context_policy is not None \
+           and completion_policy is not None \
            and _check_access(context, self.remoteUser, self.request)
 
     def _do_decorate_external(self, context, result):
