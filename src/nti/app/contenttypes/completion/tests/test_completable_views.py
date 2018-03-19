@@ -8,6 +8,7 @@ from __future__ import absolute_import
 # pylint: disable=protected-access,too-many-public-methods,arguments-differ
 
 from hamcrest import is_
+from hamcrest import none
 from hamcrest import contains
 from hamcrest import not_none
 from hamcrest import has_length
@@ -93,6 +94,7 @@ class TestCompletableRequiredViews(ApplicationLayerTest):
 
         context_url = '/dataserver2/Objects/%s' % context_ntiid
         context_res = self.testapp.get(context_url).json_body
+        assert_that(context_res.get('CompletionPolicy'), none())
         self.forbid_link_with_rel(context_res,
                                   COMPLETION_REQUIRED_VIEW_NAME)
         self.forbid_link_with_rel(context_res,
@@ -104,7 +106,9 @@ class TestCompletableRequiredViews(ApplicationLayerTest):
                                                         COMPLETION_PATH_NAME,
                                                         COMPLETION_POLICY_VIEW_NAME)
         self.testapp.put_json(policy_url, {u'MimeType': aggregate_mimetype})
-        policy_res = self.testapp.get(policy_url).json_body
+        context_res = self.testapp.get(context_url).json_body
+        policy_res = context_res.get('CompletionPolicy')
+        assert_that(policy_res, not_none())
         self.require_link_href_with_rel(policy_res,
                                         COMPLETION_REQUIRED_VIEW_NAME)
         self.require_link_href_with_rel(policy_res,
