@@ -16,6 +16,6 @@
     <ext:registerAutoPackageIO
         root_interfaces=".interfaces.ITestPersistentCompletableItem
                          .interfaces.ITestPersistentCompletionContext"
-        modules=".test_models" />
+        modules=".models" />
 
 </configure>

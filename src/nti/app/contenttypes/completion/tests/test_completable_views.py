@@ -30,8 +30,8 @@ from nti.app.contenttypes.completion.tests import CompletionTestLayer
 
 from nti.app.contenttypes.completion.tests.interfaces import ITestPersistentCompletableItem
 
-from nti.app.contenttypes.completion.tests.test_models import PersistentCompletableItem
-from nti.app.contenttypes.completion.tests.test_models import PersistentCompletionContext
+from nti.app.contenttypes.completion.tests.models import PersistentCompletableItem
+from nti.app.contenttypes.completion.tests.models import PersistentCompletionContext
 
 from nti.app.testing.application_webtest import ApplicationLayerTest
 
