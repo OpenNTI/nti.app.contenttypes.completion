@@ -23,7 +23,7 @@ from nti.app.contenttypes.completion import DEFAULT_REQUIRED_POLICY_PATH_NAME
 
 from nti.app.contenttypes.completion.tests import CompletionTestLayer
 
-from nti.app.contenttypes.completion.tests.test_models import PersistentCompletionContext
+from nti.app.contenttypes.completion.tests.models import PersistentCompletionContext
 
 from nti.app.testing.application_webtest import ApplicationLayerTest
 
