@@ -53,8 +53,7 @@ class TestCompletionPolicyViews(ApplicationLayerTest):
     aggregate_mimetype = CompletableItemAggregateCompletionPolicy.mime_type
 
     def _set_context_policy(self, context_ntiid):
-        full_data = {u'percentage': None,
-                     u'MimeType': self.aggregate_mimetype}
+        full_data = {u'MimeType': self.aggregate_mimetype}
 
         context_url = '/dataserver2/Objects/%s' % context_ntiid
         context_res = self.testapp.get(context_url).json_body
@@ -91,8 +90,7 @@ class TestCompletionPolicyViews(ApplicationLayerTest):
 
         non_admin_environ = self._make_extra_environ(non_admin_username)
 
-        full_data = {u'percentage': None,
-                     u'MimeType': self.aggregate_mimetype}
+        full_data = {u'MimeType': self.aggregate_mimetype}
 
         # Empty
         url = '/dataserver2/Objects/%s/%s/%s' % (context_ntiid,
@@ -108,7 +106,7 @@ class TestCompletionPolicyViews(ApplicationLayerTest):
         last_last_mod = res[LAST_MODIFIED]
         assert_that(res[CREATED_TIME], not_none())
         assert_that(last_last_mod, not_none())
-        assert_that(res['percentage'], none())
+        assert_that(res['percentage'], is_(1.0))
         assert_that(policy_href, not_none())
 
         # Put
@@ -133,7 +131,8 @@ class TestCompletionPolicyViews(ApplicationLayerTest):
         # Validation
         self.testapp.put_json(policy_href, {'percentage': 1.5}, status=422)
         self.testapp.put_json(policy_href, {'percentage': -.5}, status=422)
-        self.testapp.put_json(policy_href, {'percentage': None})
+        self.testapp.put_json(policy_href, {'percentage': None}, status=422)
+        self.testapp.put_json(policy_href, {'percentage': 1.0})
 
         self.testapp.put_json(url, full_data,
                               extra_environ=non_admin_environ,
@@ -155,7 +154,7 @@ class TestCompletionPolicyViews(ApplicationLayerTest):
         last_last_mod = res[LAST_MODIFIED]
         assert_that(res[CREATED_TIME], not_none())
         assert_that(last_last_mod, not_none())
-        assert_that(res['percentage'], none())
+        assert_that(res['percentage'], is_(1.0))
         assert_that(sub_policy_href, not_none())
 
         assert_that(sub_policy_href, is_not(policy_href))
@@ -171,7 +170,7 @@ class TestCompletionPolicyViews(ApplicationLayerTest):
 
         res = self.testapp.get(url)
         res = res.json_body
-        assert_that(res['percentage'], none())
+        assert_that(res['percentage'], is_(1.0))
 
         self.testapp.get(sub_url, extra_environ=non_admin_environ, status=403)
 
