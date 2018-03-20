@@ -10,6 +10,12 @@
 
 	<include package="nti.contenttypes.completion" />
 
+    <!-- adapter -->
+    <adapter factory=".adapters._completion_context_progress"
+             provides="nti.contenttypes.completion.interfaces.IProgress"
+             for="nti.coremetadata.interfaces.IUser
+                  nti.contenttypes.completion.interfaces.ICompletionContext" />
+
     <!-- Path Adapters -->
     <adapter name="Completion"
              for="nti.contenttypes.completion.interfaces.ICompletionContext

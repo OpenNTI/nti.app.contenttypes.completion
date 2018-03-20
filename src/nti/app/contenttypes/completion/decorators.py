@@ -31,7 +31,6 @@ from nti.contenttypes.completion.interfaces import ICompletionContext
 from nti.contenttypes.completion.interfaces import ICompletableItemContainer
 from nti.contenttypes.completion.interfaces import ICompletionContextCompletionPolicy
 from nti.contenttypes.completion.interfaces import ICompletableItemDefaultRequiredPolicy
-from nti.contenttypes.completion.interfaces import ICompletionContextCompletionPolicyContainer
 
 from nti.dataserver.authorization import ACT_CONTENT_EDIT
 
