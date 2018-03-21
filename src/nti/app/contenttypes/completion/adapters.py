@@ -64,7 +64,7 @@ class CompletionContextProgress(object):
 
     def _get_last_mod(self):
         if self.user_completed_items:
-            return max(x.CompletedDate for x in self.user_completed_items)
+            return max(x.CompletedDate for x in self.user_completed_items.values())
 
     def __call__(self):
         ntiid = getattr(self.context, 'ntiid', '')
