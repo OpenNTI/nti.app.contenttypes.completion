@@ -37,6 +37,7 @@ from nti.app.testing.application_webtest import ApplicationLayerTest
 
 from nti.app.testing.decorators import WithSharedApplicationMockDS
 
+from nti.contenttypes.completion.interfaces import IProgress
 from nti.contenttypes.completion.interfaces import ICompletionContext
 
 from nti.contenttypes.completion.policies import CompletableItemAggregateCompletionPolicy
@@ -88,6 +89,14 @@ class TestCompletableRequiredViews(ApplicationLayerTest):
             item1.ntiid = item_ntiid1
             item_ntiid2 = to_external_ntiid_oid(item2)
             item2.ntiid = item_ntiid2
+
+            progress = component.queryMultiAdapter((user, completion_context),
+                                                   IProgress)
+            assert_that(progress, not_none())
+            assert_that(progress.AbsoluteProgress, is_(0))
+            assert_that(progress.MaxPossibleProgress, is_(0))
+            assert_that(progress.HasProgress, is_(False))
+
         assert_that(context_ntiid, not_none())
 
         non_admin_environ = self._make_extra_environ(non_admin_username)
