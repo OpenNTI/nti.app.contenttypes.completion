@@ -17,7 +17,7 @@ from nti.coremetadata.interfaces import IUser
 
 from nti.contenttypes.completion.interfaces import IProgress
 from nti.contenttypes.completion.interfaces import ICompletionContext
-from nti.contenttypes.completion.interfaces import ICompletableItemProvider
+from nti.contenttypes.completion.interfaces import IRequiredCompletableItemProvider
 from nti.contenttypes.completion.interfaces import IPrincipalCompletedItemContainer
 
 from nti.contenttypes.completion.progress import Progress
@@ -43,7 +43,7 @@ class CompletionContextProgress(object):
         """
         result = {}
         for completable_provider in component.subscribers((self.user, self.context),
-                                                          ICompletableItemProvider):
+                                                          IRequiredCompletableItemProvider):
             for item in completable_provider.iter_items():
                 result[item.ntiid] = item
         return result
@@ -80,11 +80,11 @@ class CompletionContextProgress(object):
                             MaxPossibleProgress=max_possible,
                             LastModified=last_mod,
                             Item=self.context,
-                            User=self.user,
+                            User=self.user, 
                             HasProgress=has_progress)
         return progress
 
-
+    
 @component.adapter(IUser, ICompletionContext)
 @interface.implementer(IProgress)
 def _completion_context_progress(user, context):
