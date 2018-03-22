@@ -24,7 +24,7 @@ from nti.zodb.persistentproperty import PersistentPropertyHolder
 class PersistentCompletionContext(MockCompletionContext,
                                   PersistentPropertyHolder,
                                   ZContainedMixin):
-    pass
+    ntiid = ''
 
 
 @interface.implementer(ITestPersistentCompletableItem)
