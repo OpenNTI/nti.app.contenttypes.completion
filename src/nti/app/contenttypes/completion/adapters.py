@@ -15,16 +15,34 @@ from zope.cachedescriptors.property import Lazy
 
 from nti.coremetadata.interfaces import IUser
 
-from nti.contenttypes.completion.interfaces import IProgress
+from nti.contenttypes.completion.interfaces import ICompletedItemProvider
 from nti.contenttypes.completion.interfaces import ICompletionContext
 from nti.contenttypes.completion.interfaces import IRequiredCompletableItemProvider
 from nti.contenttypes.completion.interfaces import IPrincipalCompletedItemContainer
+from nti.contenttypes.completion.interfaces import IProgress
 
 from nti.contenttypes.completion.progress import Progress
 
 from nti.ntiids.oids import to_external_ntiid_oid
 
 logger = __import__('logging').getLogger(__name__)
+
+@interface.implementer(ICompletedItemProvider)
+@component.adapter(IUser, ICompletionContext)
+class PrincipalCompletedItemsProvider(object):
+    """
+    Provides the :class:`ICompletedItem`s from the users completed items container
+    """
+
+    def __init__(self, user, context):
+        self.user = user
+        self.context = context
+
+    def completed_items(self):
+        user_completed_items = component.queryMultiAdapter((self.user, self.context),
+                                                           IPrincipalCompletedItemContainer)
+        for item in user_completed_items.itervalues():
+            yield item
 
 
 class CompletionContextProgress(object):
@@ -36,6 +54,12 @@ class CompletionContextProgress(object):
         self.user = user
         self.context = context
 
+    def _key(self, item):
+        ntiid = getattr(item, 'ntiid', '')
+        if not ntiid:
+            ntiid = to_external_ntiid_oid(item)
+        return ntiid
+
     @Lazy
     def completable_items(self):
         """
@@ -45,7 +69,8 @@ class CompletionContextProgress(object):
         for completable_provider in component.subscribers((self.user, self.context),
                                                           IRequiredCompletableItemProvider):
             for item in completable_provider.iter_items():
-                result[item.ntiid] = item
+                key = self._key(item)
+                result[key] = item
         return result
 
     @Lazy
@@ -55,21 +80,20 @@ class CompletionContextProgress(object):
         required for this context.
         """
         result = {}
-        user_completed_items = component.queryMultiAdapter((self.user, self.context),
-                                                           IPrincipalCompletedItemContainer)
-        for key, completed_item in user_completed_items.items():
-            if key in self.completable_items:
-                result[key] = completed_item
-        return user_completed_items
+        for completed_provider in component.subscribers((self.user, self.context),
+                                                          ICompletedItemProvider):
+            for item in completed_provider.completed_items():
+                key = self._key(item)
+                if key in self.completable_items:
+                    result[key] = item
+        return result
 
     def _get_last_mod(self):
         if self.user_completed_items:
             return max(x.CompletedDate for x in self.user_completed_items.values())
 
     def __call__(self):
-        ntiid = getattr(self.context, 'ntiid', '')
-        if not ntiid:
-            ntiid = to_external_ntiid_oid(self.context)
+        ntiid = self._key(self.context)
         last_mod = self._get_last_mod()
         completed_count = len(self.user_completed_items)
         max_possible = len(self.completable_items)
