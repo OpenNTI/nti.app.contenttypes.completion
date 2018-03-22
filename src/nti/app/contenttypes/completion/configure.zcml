@@ -16,6 +16,12 @@
              for="nti.coremetadata.interfaces.IUser
                   nti.contenttypes.completion.interfaces.ICompletionContext" />
 
+    
+    <subscriber factory=".adapters.PrincipalCompletedItemsProvider"
+                provides="nti.contenttypes.completion.interfaces.ICompletedItemProvider"
+                for="nti.dataserver.interfaces.IUser
+		     nti.contenttypes.completion.interfaces.ICompletionContext" />
+
     <!-- Path Adapters -->
     <adapter name="Completion"
              for="nti.contenttypes.completion.interfaces.ICompletionContext
