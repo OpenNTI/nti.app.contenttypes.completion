@@ -151,28 +151,30 @@ class CompletableItemDecorator(AbstractAuthenticatedRequestAwareDecorator):
     def completion_context(self):
         return ICompletionContext(self.context, None)
 
-    def _predicate(self, unused_context, unused_result):
+    def has_completion_policy(self):
         completion_policy = ICompletionContextCompletionPolicy(self.completion_context,
                                                                None)
-        return self._is_authenticated \
-           and completion_policy is not None
+        return completion_policy is not None
 
     def _do_decorate_external(self, context, result):
-        required_container = ICompletableItemContainer(self.completion_context)
-        default_policy = ICompletableItemDefaultRequiredPolicy(self.completion_context)
-        is_required = required_container.is_item_required(context)
-        is_not_required = required_container.is_item_optional(context)
-        # We're default if we are not explicitly required/not-required
-        is_default_state = not is_required and not is_not_required
-        item_mime_type = getattr(context, 'mime_type', '')
-        default_required_state = item_mime_type in default_policy.mime_types
-        if is_default_state:
-            is_required = default_required_state
-        result['CompletionRequired'] = is_required
-        result['CompletionDefaultState'] = default_required_state
-        result['IsCompletionDefaultState'] = is_default_state
+        if self.has_completion_policy():
+            required_container = ICompletableItemContainer(self.completion_context)
+            default_policy = ICompletableItemDefaultRequiredPolicy(self.completion_context)
+            is_required = required_container.is_item_required(context)
+            is_not_required = required_container.is_item_optional(context)
+            # We're default if we are not explicitly required/not-required
+            is_default_state = not is_required and not is_not_required
+            item_mime_type = getattr(context, 'mime_type', '')
+            default_required_state = item_mime_type in default_policy.mime_types
+            if is_default_state:
+                is_required = default_required_state
+            result['CompletionRequired'] = is_required
+            result['CompletionDefaultState'] = default_required_state
+            result['IsCompletionDefaultState'] = is_default_state
 
-        completed_item = get_completed_item(self.remoteUser,
-                                            self.completion_context,
-                                            context)
+        completed_item = None
+        if self.completion_context is not None:
+            completed_item = get_completed_item(self.remoteUser,
+                                                self.completion_context,
+                                                context)
         result['CompletedDate'] = getattr(completed_item, 'CompletedDate', None)
