@@ -32,6 +32,8 @@ from nti.contenttypes.completion.interfaces import ICompletableItemContainer
 from nti.contenttypes.completion.interfaces import ICompletionContextCompletionPolicy
 from nti.contenttypes.completion.interfaces import ICompletableItemDefaultRequiredPolicy
 
+from nti.contenttypes.completion.utils import get_completed_item
+
 from nti.dataserver.authorization import ACT_CONTENT_EDIT
 
 from nti.dataserver.authorization import is_admin_or_content_admin_or_site_admin
@@ -169,3 +171,8 @@ class CompletableItemDecorator(AbstractAuthenticatedRequestAwareDecorator):
         result['CompletionRequired'] = is_required
         result['CompletionDefaultState'] = default_required_state
         result['IsCompletionDefaultState'] = is_default_state
+
+        completed_item = get_completed_item(self.remoteUser,
+                                            self.completion_context,
+                                            context)
+        result['CompletedDate'] = getattr(completed_item, 'CompletedDate', None)
