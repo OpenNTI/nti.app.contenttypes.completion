@@ -47,6 +47,8 @@ from nti.dataserver.authorization_acl import ace_denying_all
 
 from nti.dataserver.users import User
 
+from nti.links.links import Link
+
 from nti.traversal.traversal import find_interface
 
 def raise_error(data, tb=None,
@@ -80,6 +82,10 @@ class CompletableItemsPathAdapter(Contained):
 
 _USERS_SUBPATH = u'users'
 
+def completed_items_link(completion_context, user):
+    return Link(completion_context,
+                rel='CompletedItems',
+                elements=('Completion', 'CompletedItems', 'users', user.username))
 
 @interface.implementer(IPathAdapter)
 @interface.implementer(ICompletedItemsContext)
