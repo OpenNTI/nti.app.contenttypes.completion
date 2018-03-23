@@ -16,7 +16,7 @@ from zope import interface
 
 from nti.app.base.abstract_views import AbstractAuthenticatedView
 
-from nti.app.contenttypes.completion.adapters import CompletionContextProgress
+from nti.app.contenttypes.completion.adapters import CompletionContextProgressFactory
 
 from nti.app.contenttypes.completion.interfaces import ICompletedItemsContext
 
@@ -51,7 +51,7 @@ class UserCompletedItems(AbstractAuthenticatedView):
     def __call__(self):
         if self.user is None:
             raise hexc.HTTPNotFound()
-        completion_builder = CompletionContextProgress(self.user, self.completion_context)
+        completion_builder = CompletionContextProgressFactory(self.user, self.completion_context)
 
         results = LocatedExternalDict()
         results.__name__ = self.user.username
