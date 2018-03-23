@@ -85,7 +85,7 @@ class CompletionContextProgressFactory(object):
         for completed_provider in component.subscribers((self.user, self.context),
                                                           ICompletedItemProvider):
             for item in completed_provider.completed_items():
-                key = self._key(item)
+                key = self._key(item.Item)
                 if key in self.completable_items:
                     result[key] = item
         return result

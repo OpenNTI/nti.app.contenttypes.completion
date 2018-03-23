@@ -39,6 +39,12 @@
              factory=".views.CompletableItemsPathAdapter"
              provides="zope.traversing.interfaces.IPathAdapter" />
 
+    <adapter name="CompletedItems"
+             for=".views.CompletionPathAdapter
+                  pyramid.interfaces.IRequest"
+             factory=".views.CompletedItemsPathAdapter"
+             provides="zope.traversing.interfaces.IPathAdapter" />
+
     <adapter name="DefaultRequiredPolicy"
              for=".views.CompletionPathAdapter
                   pyramid.interfaces.IRequest"
