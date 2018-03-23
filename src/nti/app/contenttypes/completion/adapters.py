@@ -15,13 +15,15 @@ from zope.cachedescriptors.property import Lazy
 
 from nti.coremetadata.interfaces import IUser
 
-from nti.contenttypes.completion.interfaces import ICompletedItemProvider
+from nti.contenttypes.completion.interfaces import IProgress
 from nti.contenttypes.completion.interfaces import ICompletionContext
+from nti.contenttypes.completion.interfaces import ICompletedItemProvider
 from nti.contenttypes.completion.interfaces import IRequiredCompletableItemProvider
 from nti.contenttypes.completion.interfaces import IPrincipalCompletedItemContainer
-from nti.contenttypes.completion.interfaces import IProgress
+from nti.contenttypes.completion.interfaces import ICompletionContextCompletionPolicy
 
-from nti.contenttypes.completion.progress import Progress
+
+from nti.contenttypes.completion.progress import CompletionContextProgress
 
 from nti.ntiids.oids import to_external_ntiid_oid
 
@@ -45,9 +47,9 @@ class PrincipalCompletedItemsProvider(object):
             yield item
 
 
-class CompletionContextProgress(object):
+class CompletionContextProgressFactory(object):
     """
-    Returns the :class:`IProgress` for an :class:`ICompletionContext`.
+    Returns the :class:`ICompletionContextProgress` for an :class:`ICompletionContext`.
     """
 
     def __init__(self, user, context):
@@ -99,17 +101,25 @@ class CompletionContextProgress(object):
         max_possible = len(self.completable_items)
         has_progress = bool(completed_count)
         # We probably always want to return this progress, even if there is none.
-        progress = Progress(NTIID=ntiid,
-                            AbsoluteProgress=completed_count,
-                            MaxPossibleProgress=max_possible,
-                            LastModified=last_mod,
-                            Item=self.context,
-                            User=self.user, 
-                            HasProgress=has_progress)
+        progress = CompletionContextProgress(NTIID=ntiid,
+                                             AbsoluteProgress=completed_count,
+                                             MaxPossibleProgress=max_possible,
+                                             LastModified=last_mod,
+                                             Item=self.context,
+                                             User=self.user,
+                                             CompletionContext=self.context,
+                                             HasProgress=has_progress)
+
+        policy = ICompletionContextCompletionPolicy(self.context, None)
+        if policy is not None:
+            completed_item = policy.is_complete(progress)
+            if completed_item is not None:
+                progress.Completed = True
+                progress.CompletedDate = completed_item.CompletedDate
         return progress
 
-    
+
 @component.adapter(IUser, ICompletionContext)
 @interface.implementer(IProgress)
 def _completion_context_progress(user, context):
-    return CompletionContextProgress(user, context)()
+    return CompletionContextProgressFactory(user, context)()
