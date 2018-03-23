@@ -17,7 +17,7 @@ from nti.schema.field import Object
 from nti.contenttypes.completion.interfaces import ICompletionContext
 
 from nti.dataserver.interfaces import IACLProvider
-from nti.dataserver.interfaces import ILengthEnumerableEntityContainer
+from nti.dataserver.interfaces import IEnumerableEntityContainer
 from nti.dataserver.interfaces import IUser
 
 class ICompletionContextContained(interface.Interface):
@@ -55,7 +55,7 @@ class ICompletionContextACLProvider(IACLProvider):
     pass
 
 
-class ICompletionContextCohort(ILengthEnumerableEntityContainer):
+class ICompletionContextCohort(IEnumerableEntityContainer):
     """
     An entity container that is treated as a cohort when aggregating
     completion information or listing completion details

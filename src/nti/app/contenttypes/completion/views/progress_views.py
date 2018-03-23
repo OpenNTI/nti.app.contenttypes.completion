@@ -69,7 +69,7 @@ class ProgressContextView(AbstractAuthenticatedView):
         bucket_size = self.request.params.get('bucketSize', 5)
 
         cohort = ICompletionContextCohort(self.context.completion_context, ())
-        total_students = len(cohort)
+        total_students = 0
         accumulated_progress = 0
         count_started = 0
         count_completed = 0
@@ -89,6 +89,7 @@ class ProgressContextView(AbstractAuthenticatedView):
                 count_started += 1
             if progress.Completed:
                 count_completed += 1
+            total_students += 1
 
         result = LocatedExternalDict()
         result.__name__ = self.request.view_name
@@ -187,5 +188,5 @@ class ProgressContextView(AbstractAuthenticatedView):
                                                                       self.context.completion_context),
                                                                      IProgress)
         result[ITEMS] = items
-        result[TOTAL] = result[ITEM_COUNT] = len(users)
+        result[TOTAL] = result[ITEM_COUNT] = len(items)
         return result
