@@ -148,6 +148,16 @@ class CompletedItemsPathAdapter(Contained, CompletionContextMixin, UserTraversab
         self.__parent__ = context
         self.user = None
 
+def progress_link(completion_context, user=None, rel=None, view_name=None):
+    elements = ['Completion', 'Progress']
+    if user:
+        elements.extend(['users', user.username])
+    if view_name:
+        elements.append('@@'+view_name)
+    return Link(completion_context,
+                rel=rel,
+                elements=elements)
+
 @interface.implementer(IPathAdapter)
 @interface.implementer(ICompletionContextProgress)
 class ProgressPathAdapter(Contained, CompletionContextMixin):
