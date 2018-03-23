@@ -45,6 +45,22 @@
              factory=".views.CompletedItemsPathAdapter"
              provides="zope.traversing.interfaces.IPathAdapter" />
 
+    <adapter name="Progress"
+             for=".views.CompletionPathAdapter
+                  pyramid.interfaces.IRequest"
+             factory=".views.ProgressPathAdapter"
+             provides="zope.traversing.interfaces.IPathAdapter" />
+
+    <adapter factory="nti.traversal.traversal.DefaultAdapterTraversable"
+                 for=".views.ProgressPathAdapter
+                      pyramid.interfaces.IRequest" />
+
+    <adapter name="users"
+             for=".views.ProgressPathAdapter
+                  pyramid.interfaces.IRequest"
+             factory=".views.UsersProgressPathAdapter"
+             provides="zope.traversing.interfaces.IPathAdapter" />
+    
     <adapter name="DefaultRequiredPolicy"
              for=".views.CompletionPathAdapter
                   pyramid.interfaces.IRequest"

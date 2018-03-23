@@ -17,15 +17,32 @@ from nti.schema.field import Object
 from nti.contenttypes.completion.interfaces import ICompletionContext
 
 from nti.dataserver.interfaces import IACLProvider
+from nti.dataserver.interfaces import ILengthEnumerableEntityContainer
 from nti.dataserver.interfaces import IUser
 
-
-class ICompletedItemsContext(interface.Interface):
+class ICompletionContextContained(interface.Interface):
 
     completion_context = Object(ICompletionContext,
                                 title=u"The completion context this progress is context is rooted",
                                 required=True)
+
+class ICompletedItemsContext(ICompletionContextContained):
     
+    user = Object(IUser,
+                  title=u'The user we are scoped to',
+                  required=False)
+
+class ICompletionContextProgress(ICompletionContextContained):
+    """
+    Something that represents all the progress in a completion
+    context.
+    """
+
+class ICompletionContextUserProgress(ICompletionContextContained):
+    """
+    A representation of a particular users progress
+    in a ICompletionContext
+    """
     user = Object(IUser,
                   title=u'The user we are scoped to',
                   required=False)
@@ -36,3 +53,10 @@ class ICompletionContextACLProvider(IACLProvider):
     Typically adapted from (ICompletionContext, *)
     """
     pass
+
+
+class ICompletionContextCohort(ILengthEnumerableEntityContainer):
+    """
+    An entity container that is treated as a cohort when aggregating
+    completion information or listing completion details
+    """
