@@ -80,7 +80,7 @@ class ProgressContextView(AbstractAuthenticatedView):
         for user in cohort:
             # Attempt to re-use providers, which may have internal caching
             progress_factory = CompletionContextProgressFactory(user,
-                                                                self.context,
+                                                                self.context.completion_context,
                                                                 required_item_providers)
             progress = progress_factory()
             if required_item_providers is None:
@@ -148,7 +148,8 @@ class ProgressContextView(AbstractAuthenticatedView):
 
         items = {}
 
-        progress_factory = CompletionContextProgressFactory(self.context.user, self.context.completion_context)
+        progress_factory = CompletionContextProgressFactory(self.context.user,
+                                                            self.context.completion_context)
 
         completable = progress_factory.completable_items
         for key in completable:
