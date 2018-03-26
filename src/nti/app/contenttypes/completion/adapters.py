@@ -86,7 +86,7 @@ class CompletionContextProgressFactory(object):
         for completed_provider in component.subscribers((self.user, self.context),
                                                         ICompletedItemProvider):
             for item in completed_provider.completed_items():
-                result[item.ntiid] = item
+                result[item.Item.ntiid] = item
         return result
 
     def _get_last_mod(self):

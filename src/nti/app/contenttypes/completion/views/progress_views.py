@@ -78,7 +78,7 @@ class ProgressContextView(AbstractAuthenticatedView):
         required_item_providers = None
 
         for user in cohort:
-             # Attempt to re-use providers, which may have internal caching
+            # Attempt to re-use providers, which may have internal caching
             progress_factory = CompletionContextProgressFactory(user,
                                                                 self.context,
                                                                 required_item_providers)
