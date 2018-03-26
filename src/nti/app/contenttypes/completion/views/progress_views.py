@@ -17,7 +17,6 @@ from pyramid import httpexceptions as hexc
 from pyramid.view import view_config
 from pyramid.view import view_defaults
 
-from zope import interface
 from zope import component
 
 from zope.cachedescriptors.property import Lazy
@@ -26,15 +25,15 @@ from nti.app.base.abstract_views import AbstractAuthenticatedView
 
 from nti.app.contenttypes.completion.adapters import CompletionContextProgressFactory
 
+from nti.app.contenttypes.completion.interfaces import ICompletionContextCohort
 from nti.app.contenttypes.completion.interfaces import ICompletionContextProgress
 from nti.app.contenttypes.completion.interfaces import ICompletionContextUserProgress
-from nti.app.contenttypes.completion.interfaces import ICompletionContextCohort
 
 from nti.app.contenttypes.completion.views import MessageFactory as _
 
+from nti.contenttypes.completion.interfaces import IProgress
 from nti.contenttypes.completion.interfaces import ICompletionContextCompletionPolicy
 from nti.contenttypes.completion.interfaces import ICompletableItemCompletionPolicy
-from nti.contenttypes.completion.interfaces import IProgress
 
 from nti.dataserver import authorization as nauth
 
@@ -51,6 +50,7 @@ ITEM_COUNT = StandardExternalFields.ITEM_COUNT
 
 logger = __import__('logging').getLogger(__name__)
 
+
 @view_defaults(route_name='objects.generic.traversal',
                renderer='rest',
                request_method='GET')
@@ -58,7 +58,8 @@ class ProgressContextView(AbstractAuthenticatedView):
 
     @Lazy
     def completion_context_policy(self):
-        return ICompletionContextCompletionPolicy(self.context.completion_context, None)
+        return ICompletionContextCompletionPolicy(self.context.completion_context,
+                                                  None)
 
     @view_config(permission=nauth.ACT_READ,
                  context=ICompletionContextProgress)
@@ -74,21 +75,30 @@ class ProgressContextView(AbstractAuthenticatedView):
         count_started = 0
         count_completed = 0
         distribution = Counter()
+        required_item_providers = None
 
         for user in cohort:
-            progress = component.queryMultiAdapter((user, self.context.completion_context), IProgress)
-            if progress.MaxPossibleProgress:
+             # Attempt to re-use providers, which may have internal caching
+            progress_factory = CompletionContextProgressFactory(user,
+                                                                self.context,
+                                                                required_item_providers)
+            progress = progress_factory()
+            if required_item_providers is None:
+                required_item_providers = progress_factory.required_item_providers
+
+            try:
                 percentage_complete = float(progress.AbsoluteProgress) / float(progress.MaxPossibleProgress)
-            else:
+            except (TypeError, ZeroDivisionError, AttributeError):
                 percentage_complete = 0
             bucketed = bucket_size * math.floor(percentage_complete * 100 / bucket_size)
             distribution[bucketed] += 1
             accumulated_progress += percentage_complete
 
-            if progress.AbsoluteProgress:
-                count_started += 1
-            if progress.Completed:
-                count_completed += 1
+            if progress is not None:
+                if progress.AbsoluteProgress:
+                    count_started += 1
+                if progress.Completed:
+                    count_completed += 1
             total_students += 1
 
         result = LocatedExternalDict()
@@ -103,7 +113,7 @@ class ProgressContextView(AbstractAuthenticatedView):
         result['CountCompleted'] = count_completed
         result['ProgressDistribution'] = {k/100.0: distribution[k]
                                           for k in range(0, 101, bucket_size)}
-           
+
         return result
 
 
@@ -114,7 +124,8 @@ class ProgressContextView(AbstractAuthenticatedView):
             raise hexc.HTTPNotFound()
         if self.completion_context_policy is None:
             raise hexc.HTTPNotFound()
-        progress = component.queryMultiAdapter((self.context.user, self.context.completion_context), IProgress)
+        progress = component.queryMultiAdapter((self.context.user, self.context.completion_context),
+                                               IProgress)
         return progress if progress is not None else hexc.HTTPNoContent()
 
 
@@ -126,7 +137,8 @@ class ProgressContextView(AbstractAuthenticatedView):
             raise hexc.HTTPNotFound()
         if self.completion_context_policy is None:
             raise hexc.HTTPNotFound()
-        progress = component.queryMultiAdapter((self.context.user, self.context.completion_context), IProgress)
+        progress = component.queryMultiAdapter((self.context.user, self.context.completion_context),
+                                               IProgress)
 
         result = LocatedExternalDict()
         result.__name__ = self.request.view_name
@@ -154,12 +166,12 @@ class ProgressContextView(AbstractAuthenticatedView):
                 completed_item = item_policy.is_complete(item_progress)
                 ext_progress['_CalculatedCompletedDate'] = completed_item.CompletedDate if completed_item else None
                 item_progress = ext_progress
-                                                                            
+
             items[key] = item_progress
 
         result[ITEMS] = items
         return result
-        
+
 
     @view_config(permission=nauth.ACT_LIST,
                  context=ICompletionContextUserProgress,
@@ -173,7 +185,7 @@ class ProgressContextView(AbstractAuthenticatedView):
             raise hexc.HTTPNotFound()
         if self.completion_context_policy is None:
             raise hexc.HTTPNotFound()
-        
+
         result = LocatedExternalDict()
         result.__name__ = self.request.view_name
         result.__parent__ = self.request.context
@@ -181,12 +193,20 @@ class ProgressContextView(AbstractAuthenticatedView):
         # We could support subsets (e.g. course scopes, groups, etc)
         # by adding a layer of indirection here that was able to produce
         # ICompletionContextCohorts for a given name provided as a query param
-        users = ICompletionContextCohort(self.context.completion_context, ())
+        users = ICompletionContextCohort(self.context.completion_context,
+                                         ())
         items = {}
+        required_item_providers = None
+
         for user in users:
-            items[IPrincipal(user).id] = component.queryMultiAdapter((user,
-                                                                      self.context.completion_context),
-                                                                     IProgress)
+            # Attempt to re-use providers, which may have internal caching
+            progress_factory = CompletionContextProgressFactory(user,
+                                                                self.context.completion_context,
+                                                                required_item_providers)
+
+            items[IPrincipal(user).id] = progress_factory()
+            if required_item_providers is None:
+                required_item_providers = progress_factory.required_item_providers
         result[ITEMS] = items
         result[TOTAL] = result[ITEM_COUNT] = len(items)
         return result
