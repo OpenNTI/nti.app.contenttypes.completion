@@ -22,12 +22,12 @@ from nti.contenttypes.completion.interfaces import IRequiredCompletableItemProvi
 from nti.contenttypes.completion.interfaces import IPrincipalCompletedItemContainer
 from nti.contenttypes.completion.interfaces import ICompletionContextCompletionPolicy
 
-
 from nti.contenttypes.completion.progress import CompletionContextProgress
 
 from nti.ntiids.oids import to_external_ntiid_oid
 
 logger = __import__('logging').getLogger(__name__)
+
 
 @interface.implementer(ICompletedItemProvider)
 @component.adapter(IUser, ICompletionContext)
@@ -52,15 +52,18 @@ class CompletionContextProgressFactory(object):
     Returns the :class:`ICompletionContextProgress` for an :class:`ICompletionContext`.
     """
 
-    def __init__(self, user, context):
+    def __init__(self, user, context, required_item_providers=None):
         self.user = user
         self.context = context
+        self._required_item_providers = required_item_providers
 
-    def _key(self, item):
-        ntiid = getattr(item, 'ntiid', '')
-        if not ntiid:
-            ntiid = to_external_ntiid_oid(item)
-        return ntiid
+    @Lazy
+    def required_item_providers(self):
+        result = self._required_item_providers
+        if not result:
+            result = component.subscribers((self.context,),
+                                           IRequiredCompletableItemProvider)
+        return result
 
     @Lazy
     def completable_items(self):
@@ -68,11 +71,9 @@ class CompletionContextProgressFactory(object):
         A map of ntiid to required completable items.
         """
         result = {}
-        for completable_provider in component.subscribers((self.user, self.context),
-                                                          IRequiredCompletableItemProvider):
-            for item in completable_provider.iter_items():
-                key = self._key(item)
-                result[key] = item
+        for completable_provider in self.required_item_providers:
+            for item in completable_provider.iter_items(self.user):
+                result[item.ntiid] = item
         return result
 
     @Lazy
@@ -83,11 +84,9 @@ class CompletionContextProgressFactory(object):
         """
         result = {}
         for completed_provider in component.subscribers((self.user, self.context),
-                                                          ICompletedItemProvider):
+                                                        ICompletedItemProvider):
             for item in completed_provider.completed_items():
-                key = self._key(item.Item)
-                if key in self.completable_items:
-                    result[key] = item
+                result[item.ntiid] = item
         return result
 
     def _get_last_mod(self):
@@ -95,7 +94,8 @@ class CompletionContextProgressFactory(object):
             return max(x.CompletedDate for x in self.user_completed_items.values())
 
     def __call__(self):
-        ntiid = self._key(self.context)
+        ntiid = getattr(self.context, 'ntiid', '') \
+             or to_external_ntiid_oid(self.context)
         last_mod = self._get_last_mod()
         completed_count = len(self.user_completed_items)
         max_possible = len(self.completable_items)
