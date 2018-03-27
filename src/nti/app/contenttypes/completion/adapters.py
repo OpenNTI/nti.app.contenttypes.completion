@@ -101,7 +101,7 @@ class CompletionContextProgressFactory(object):
         return result
 
     def _get_last_mod(self):
-        if self.user_completed_items:
+        if self.user_required_completed_items:
             return max(x.CompletedDate for x in self.user_required_completed_items.values())
 
     def __call__(self):
