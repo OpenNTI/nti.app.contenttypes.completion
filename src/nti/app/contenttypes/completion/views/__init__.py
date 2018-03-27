@@ -101,7 +101,7 @@ class CompletionContextMixin(object):
         provider = component.queryMultiAdapter((self.completion_context, self), ICompletionContextACLProvider)
         return provider.__acl__ if provider is not None else acl_from_aces(ace_denying_all())
 
-        
+
 _USERS_SUBPATH = u'users'
 
 class UserTraversableMixin(object):
@@ -117,7 +117,7 @@ class UserTraversableMixin(object):
             if not remaining or subpath != _USERS_SUBPATH:
                 raise LocationError(subpath)
             username = remaining.pop()
-            
+
 
         user = User.get_user(username)
         if user is None:
@@ -129,11 +129,13 @@ class UserTraversableMixin(object):
         if IUser.isOrExtends(iface):
             return self.user
         return None
-            
+
+
 def completed_items_link(completion_context, user):
     return Link(completion_context,
                 rel='CompletedItems',
                 elements=('Completion', 'CompletedItems', 'users', user.username))
+
 
 @interface.implementer(IPathAdapter)
 @interface.implementer(ICompletedItemsContext)
@@ -148,6 +150,7 @@ class CompletedItemsPathAdapter(Contained, CompletionContextMixin, UserTraversab
         self.__parent__ = context
         self.user = None
 
+
 def progress_link(completion_context, user=None, rel=None, view_name=None):
     elements = ['Completion', 'Progress']
     if user:
@@ -157,6 +160,7 @@ def progress_link(completion_context, user=None, rel=None, view_name=None):
     return Link(completion_context,
                 rel=rel,
                 elements=elements)
+
 
 @interface.implementer(IPathAdapter)
 @interface.implementer(ICompletionContextProgress)
@@ -175,7 +179,7 @@ class ProgressPathAdapter(Contained, CompletionContextMixin):
 class UsersProgressPathAdapter(Contained, CompletionContextMixin, UserTraversableMixin):
 
     CONSUME_SUBPATH = False
-    
+
     __name__ = _USERS_SUBPATH
 
     def __init__(self, context, request):

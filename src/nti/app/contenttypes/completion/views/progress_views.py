@@ -154,7 +154,9 @@ class ProgressContextView(AbstractAuthenticatedView):
         completable = progress_factory.completable_items
         for key in completable:
             item = completable[key]
-            item_progress = component.queryMultiAdapter((self.context.user, item, self.context.completion_context),
+            item_progress = component.queryMultiAdapter((self.context.user,
+                                                         item,
+                                                         self.context.completion_context),
                                                         IProgress)
             item_policy = component.getMultiAdapter((item, self.context.completion_context),
                                                     ICompletableItemCompletionPolicy)

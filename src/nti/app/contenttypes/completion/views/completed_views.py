@@ -51,7 +51,7 @@ class UserCompletedItems(AbstractAuthenticatedView):
 
     @Lazy
     def providers(self):
-        return tuple(component.subscribers((self.user, self.context),
+        return tuple(component.subscribers((self.user, self.completion_context),
                                             ICompletedItemProvider))
 
     def __call__(self):
