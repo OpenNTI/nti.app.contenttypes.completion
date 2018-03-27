@@ -79,8 +79,7 @@ class CompletionContextProgressFactory(object):
     @Lazy
     def user_completed_items(self):
         """
-        A map of ntiid to user completed items. Only return items that are
-        required for this context.
+        A map of ntiid to all user completed items.
         """
         result = {}
         for completed_provider in component.subscribers((self.user, self.context),
@@ -89,15 +88,27 @@ class CompletionContextProgressFactory(object):
                 result[item.item_ntiid] = item
         return result
 
+    @Lazy
+    def user_required_completed_items(self):
+        """
+        A map of ntiid to all user completed items that only includes the
+        completed items that are required.
+        """
+        result = {}
+        for required_ntiid in self.completable_items:
+            if required_ntiid in self.user_completed_items:
+                result[required_ntiid] = self.user_completed_items[required_ntiid]
+        return result
+
     def _get_last_mod(self):
         if self.user_completed_items:
-            return max(x.CompletedDate for x in self.user_completed_items.values())
+            return max(x.CompletedDate for x in self.user_required_completed_items.values())
 
     def __call__(self):
         ntiid = getattr(self.context, 'ntiid', '') \
              or to_external_ntiid_oid(self.context)
         last_mod = self._get_last_mod()
-        completed_count = len(self.user_completed_items)
+        completed_count = len(self.user_required_completed_items)
         max_possible = len(self.completable_items)
         has_progress = bool(completed_count)
         # We probably always want to return this progress, even if there is none.
