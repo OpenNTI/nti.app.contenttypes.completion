@@ -20,9 +20,9 @@ from nti.app.base.abstract_views import AbstractAuthenticatedView
 
 from nti.app.contenttypes.completion.interfaces import ICompletedItemsContext
 
-from nti.contenttypes.completion.interfaces import ICompletedItemProvider
+from nti.contenttypes.completion.authorization import ACT_VIEW_PROGRESS
 
-from nti.dataserver import authorization as nauth
+from nti.contenttypes.completion.interfaces import ICompletedItemProvider
 
 from nti.externalization.interfaces import LocatedExternalDict
 from nti.externalization.interfaces import StandardExternalFields
@@ -37,7 +37,7 @@ logger = __import__('logging').getLogger(__name__)
 @view_config(route_name='objects.generic.traversal',
              renderer='rest',
              context=ICompletedItemsContext,
-             permission=nauth.ACT_READ,
+             permission=ACT_VIEW_PROGRESS,
              request_method='GET')
 class UserCompletedItems(AbstractAuthenticatedView):
 

@@ -31,11 +31,12 @@ from nti.app.contenttypes.completion.interfaces import ICompletionContextUserPro
 
 from nti.app.contenttypes.completion.views import MessageFactory as _
 
+from nti.contenttypes.completion.authorization import ACT_LIST_PROGRESS
+from nti.contenttypes.completion.authorization import ACT_VIEW_PROGRESS
+
 from nti.contenttypes.completion.interfaces import IProgress
 from nti.contenttypes.completion.interfaces import ICompletionContextCompletionPolicy
 from nti.contenttypes.completion.interfaces import ICompletableItemCompletionPolicy
-
-from nti.dataserver import authorization as nauth
 
 from nti.dataserver.interfaces import IPrincipal
 
@@ -61,7 +62,7 @@ class ProgressContextView(AbstractAuthenticatedView):
         return ICompletionContextCompletionPolicy(self.context.completion_context,
                                                   None)
 
-    @view_config(permission=nauth.ACT_READ,
+    @view_config(permission=ACT_VIEW_PROGRESS,
                  context=ICompletionContextProgress)
     def aggegate_stats(self):
         if self.completion_context_policy is None:
@@ -117,7 +118,7 @@ class ProgressContextView(AbstractAuthenticatedView):
         return result
 
 
-    @view_config(permission=nauth.ACT_READ,
+    @view_config(permission=ACT_VIEW_PROGRESS,
                  context=ICompletionContextUserProgress)
     def user_progress(self):
         if self.context.user is None:
@@ -129,7 +130,7 @@ class ProgressContextView(AbstractAuthenticatedView):
         return progress if progress is not None else hexc.HTTPNoContent()
 
 
-    @view_config(permission=nauth.ACT_READ,
+    @view_config(permission=ACT_VIEW_PROGRESS,
                  context=ICompletionContextUserProgress,
                  name="details")
     def user_progress_details(self):
@@ -176,7 +177,7 @@ class ProgressContextView(AbstractAuthenticatedView):
         return result
 
 
-    @view_config(permission=nauth.ACT_LIST,
+    @view_config(permission=ACT_LIST_PROGRESS,
                  context=ICompletionContextUserProgress,
                  name='list')
     def list_users(self):
