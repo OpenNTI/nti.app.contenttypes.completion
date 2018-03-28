@@ -54,6 +54,16 @@ class UserCompletedItems(AbstractAuthenticatedView):
         return tuple(component.subscribers((self.user, self.completion_context),
                                             ICompletedItemProvider))
 
+    def _get_last_mod(self):
+        last_mod = None
+        for provider in self.providers:
+            if provider.last_modified is not None:
+                if last_mod is not None:
+                    last_mod = max(last_mod, provider.last_modified)
+                else:
+                    last_mod = provider.last_modified
+        return last_mod
+
     def __call__(self):
         if self.user is None:
             raise hexc.HTTPNotFound()
@@ -70,8 +80,5 @@ class UserCompletedItems(AbstractAuthenticatedView):
         results[ITEMS] = items
         results[TOTAL] = results[ITEM_COUNT] = len(items)
         results['Username'] = self.user.username
+        self.request.response.last_modified = self._get_last_mod()
         return results
-
-
-
-

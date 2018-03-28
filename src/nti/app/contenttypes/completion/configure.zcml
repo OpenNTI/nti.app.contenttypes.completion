@@ -10,13 +10,24 @@
 
 	<include package="nti.contenttypes.completion" />
 
+    <!-- Permissions -->
+    <include package="zope.securitypolicy" file="meta.zcml" />
+
+    <grant
+        permission="nti.actions.completion.viewprogress"
+        role="role:nti.dataserver.site-admin" />
+
+    <grant
+        permission="nti.actions.completion.listprogress"
+        role="role:nti.dataserver.site-admin" />
+
     <!-- adapter -->
     <adapter factory=".adapters._completion_context_progress"
              provides="nti.contenttypes.completion.interfaces.IProgress"
              for="nti.coremetadata.interfaces.IUser
                   nti.contenttypes.completion.interfaces.ICompletionContext" />
 
-    
+
     <subscriber factory=".adapters.PrincipalCompletedItemsProvider"
                 provides="nti.contenttypes.completion.interfaces.ICompletedItemProvider"
                 for="nti.dataserver.interfaces.IUser
@@ -60,7 +71,7 @@
                   pyramid.interfaces.IRequest"
              factory=".views.UsersProgressPathAdapter"
              provides="zope.traversing.interfaces.IPathAdapter" />
-    
+
     <adapter name="DefaultRequiredPolicy"
              for=".views.CompletionPathAdapter
                   pyramid.interfaces.IRequest"

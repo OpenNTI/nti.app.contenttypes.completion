@@ -40,11 +40,18 @@ class PrincipalCompletedItemsProvider(object):
         self.user = user
         self.context = context
 
+    @property
+    def user_completed_items(self):
+        return component.getMultiAdapter((self.user, self.context),
+                                         IPrincipalCompletedItemContainer)
+
     def completed_items(self):
-        user_completed_items = component.queryMultiAdapter((self.user, self.context),
-                                                           IPrincipalCompletedItemContainer)
-        for item in user_completed_items.itervalues():
+        for item in self.user_completed_items.itervalues():
             yield item
+
+    @property
+    def last_modified(self):
+        return self.user_completed_items.lastModified
 
 
 class CompletionContextProgressFactory(object):
