@@ -75,6 +75,7 @@ class ProgressContextView(AbstractAuthenticatedView):
         accumulated_progress = 0
         count_started = 0
         count_completed = 0
+        count_success = 0
         distribution = Counter()
         required_item_providers = None
 
@@ -100,6 +101,8 @@ class ProgressContextView(AbstractAuthenticatedView):
                     count_started += 1
                 if progress.Completed:
                     count_completed += 1
+                if progress.CompletedItem.Success:
+                    count_success += 1
             total_students += 1
 
         result = LocatedExternalDict()
@@ -112,6 +115,7 @@ class ProgressContextView(AbstractAuthenticatedView):
         result['TotalUsers'] = total_students
         result['CountHasProgress'] = count_started
         result['CountCompleted'] = count_completed
+        result['CountSuccess'] = count_success
         result['ProgressDistribution'] = {k/100.0: distribution[k]
                                           for k in range(0, 101, bucket_size)}
 
