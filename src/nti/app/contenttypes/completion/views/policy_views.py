@@ -176,7 +176,8 @@ class CompletionPolicyDeleteView(AbstractCompletionContextPolicyView):
 
     def __call__(self):
         item_ntiid = self.item_ntiid
-        if not item_ntiid:
+        if     not item_ntiid \
+            or item_ntiid == getattr(self.completion_context, 'ntiid', ''):
             self.completion_container.context_policy = None
         else:
             try:
