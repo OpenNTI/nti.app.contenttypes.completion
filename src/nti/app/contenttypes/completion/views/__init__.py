@@ -62,29 +62,6 @@ def raise_error(data, tb=None,
     request = request or get_current_request()
     raise_json_error(request, factory, data, tb)
 
-
-@interface.implementer(IPathAdapter)
-class CompletionPathAdapter(Contained):
-
-    __name__ = COMPLETION_PATH_NAME
-
-    def __init__(self, context, request):
-        self.context = context
-        self.request = request
-        self.__parent__ = context
-
-
-@interface.implementer(IPathAdapter)
-class CompletableItemsPathAdapter(Contained):
-
-    __name__ = COMPLETABLE_ITEMS_PATH_NAME
-
-    def __init__(self, context, request):
-        self.context = context
-        self.request = request
-        self.__parent__ = context
-
-
 class CompletionContextMixin(object):
 
     @property
@@ -101,7 +78,7 @@ class CompletionContextMixin(object):
         provider = component.queryMultiAdapter((self.completion_context, self), ICompletionContextACLProvider)
         return provider.__acl__ if provider is not None else acl_from_aces(ace_denying_all())
 
-
+        
 _USERS_SUBPATH = u'users'
 
 class UserTraversableMixin(object):
@@ -129,6 +106,28 @@ class UserTraversableMixin(object):
         if IUser.isOrExtends(iface):
             return self.user
         return None
+
+@interface.implementer(IPathAdapter)
+class CompletionPathAdapter(Contained):
+
+    __name__ = COMPLETION_PATH_NAME
+
+    def __init__(self, context, request):
+        self.context = context
+        self.request = request
+        self.__parent__ = context
+
+@interface.implementer(IPathAdapter)
+@interface.implementer(ITraversable)
+class CompletableItemsPathAdapter(Contained, CompletionContextMixin, UserTraversableMixin):
+
+    __name__ = COMPLETABLE_ITEMS_PATH_NAME
+
+    def __init__(self, context, request):
+        self.context = context
+        self.request = request
+        self.__parent__ = context
+        self.user = None
 
 
 def completed_items_link(completion_context, user):

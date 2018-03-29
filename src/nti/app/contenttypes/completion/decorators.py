@@ -26,6 +26,8 @@ from nti.app.renderers.decorators import AbstractAuthenticatedRequestAwareDecora
 
 from nti.appserver.pyramid_authorization import has_permission
 
+from nti.contenttypes.completion.authorization import ACT_VIEW_PROGRESS
+
 from nti.contenttypes.completion.interfaces import ICompletableItem
 from nti.contenttypes.completion.interfaces import ICompletionContext
 from nti.contenttypes.completion.interfaces import ICompletableItemContainer
@@ -37,6 +39,8 @@ from nti.contenttypes.completion.utils import get_completed_item
 from nti.dataserver.authorization import ACT_CONTENT_EDIT
 
 from nti.dataserver.authorization import is_admin_or_content_admin_or_site_admin
+
+from nti.dataserver.interfaces import IUser
 
 from nti.externalization.interfaces import StandardExternalFields
 from nti.externalization.interfaces import IExternalMappingDecorator
@@ -172,9 +176,9 @@ class CompletableItemDecorator(AbstractAuthenticatedRequestAwareDecorator):
             result['CompletionDefaultState'] = default_required_state
             result['IsCompletionDefaultState'] = is_default_state
 
-        completed_item = None
         if self.completion_context is not None:
-            completed_item = get_completed_item(self.remoteUser,
-                                                self.completion_context,
-                                                context)
-        result['CompletedDate'] = getattr(completed_item, 'CompletedDate', None)
+            if has_permission(ACT_VIEW_PROGRESS, self.request.context, self.request):
+                completed_item = get_completed_item(IUser(self.request.context, self.remoteUser),
+                                                    self.completion_context,
+                                                    context)
+                result['CompletedDate'] = getattr(completed_item, 'CompletedDate', None)

@@ -14,6 +14,10 @@ from pyramid.view import view_config
 
 from requests.structures import CaseInsensitiveDict
 
+from zope import component
+
+from nti.appserver.pyramid_authorization import has_permission
+
 from nti.app.base.abstract_views import AbstractAuthenticatedView
 
 from nti.app.contenttypes.completion.views import CompletableItemsPathAdapter
@@ -30,8 +34,11 @@ from nti.app.externalization.view_mixins import ModeledContentUploadRequestUtils
 from nti.contenttypes.completion.interfaces import ICompletableItem
 from nti.contenttypes.completion.interfaces import ICompletionContext
 from nti.contenttypes.completion.interfaces import ICompletableItemContainer
+from nti.contenttypes.completion.interfaces import IRequiredCompletableItemProvider
 
 from nti.dataserver import authorization as nauth
+
+from nti.dataserver.interfaces import IUser
 
 from nti.externalization.interfaces import LocatedExternalDict
 from nti.externalization.interfaces import StandardExternalFields
@@ -288,3 +295,45 @@ class CompletionNotRequiredDeleteView(AbstractCompletionRequiredView):
         self.completable_container.remove_optional_item(item_ntiid)
         logger.info('Item no longer not-required for completion %s', item_ntiid)
         return hexc.HTTPNoContent()
+
+@view_config(route_name='objects.generic.traversal',
+             renderer='rest',
+             context=CompletableItemsPathAdapter,
+             permission=nauth.ACT_READ,
+             request_method='GET')
+class CompletableItemsView(AbstractCompletionRequiredView):
+
+    @property
+    def user(self):
+        user = IUser(self.context, None)
+        if user is None:
+            user = self.remoteUser
+        return user
+    
+    def __call__(self):
+        user = self.user
+
+        # Anyone can fetch themselves (presuming they have access to the course
+        # based on our view's permission predicate. But only instructors
+        # can see the required items for someone else. Which the update perm
+        # is a proxy for (used pervasively here, but probably want to change
+        # to something more explicit)
+        if user != self.remoteUser:
+            if not has_permission(nauth.ACT_UPDATE, self.context, self.request):
+                raise hexc.HTTPForbidden()
+        
+        
+        result = LocatedExternalDict()
+        result.__parent__ = self.context.__parent__
+        result.__name__ = self.context.__name__
+
+        items = {}
+        for sub in component.subscribers((self.completion_context, ),
+                                         IRequiredCompletableItemProvider):
+            for item in sub.iter_items(user):
+                items[item.ntiid] = item
+
+        result['Username'] = user.username
+        result[ITEMS] = items
+        result[ITEM_COUNT] = result[TOTAL] = len(items)
+        return result
