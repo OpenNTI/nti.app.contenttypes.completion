@@ -131,9 +131,7 @@ class CompletionContextProgressFactory(object):
         policy = ICompletionContextCompletionPolicy(self.context, None)
         if policy is not None:
             completed_item = policy.is_complete(progress)
-            if completed_item is not None:
-                progress.Completed = True
-                progress.CompletedDate = completed_item.CompletedDate
+            progress.CompletedItem = completed_item
         return progress
 
 
