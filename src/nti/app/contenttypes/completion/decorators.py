@@ -181,4 +181,5 @@ class CompletableItemDecorator(AbstractAuthenticatedRequestAwareDecorator):
                 completed_item = get_completed_item(IUser(self.request.context, self.remoteUser),
                                                     self.completion_context,
                                                     context)
+                result['CompletedItem'] = completed_item
                 result['CompletedDate'] = getattr(completed_item, 'CompletedDate', None)
