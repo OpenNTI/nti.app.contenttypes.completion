@@ -101,7 +101,7 @@ class ProgressContextView(AbstractAuthenticatedView):
                     count_started += 1
                 if progress.Completed:
                     count_completed += 1
-                if progress.CompletedItem.Success:
+                if getattr(progress.CompletedItem, 'Success', False):
                     count_success += 1
             total_students += 1
 
