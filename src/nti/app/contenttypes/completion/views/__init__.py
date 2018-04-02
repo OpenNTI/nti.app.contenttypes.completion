@@ -45,8 +45,13 @@ from nti.app.externalization.error import raise_json_error
 
 from nti.contenttypes.completion.interfaces import ICompletionContext
 
+from nti.dataserver.authorization import ROLE_ADMIN
+
+from nti.dataserver.authorization_acl import ace_allowing
 from nti.dataserver.authorization_acl import acl_from_aces
 from nti.dataserver.authorization_acl import ace_denying_all
+
+from nti.dataserver.interfaces import ALL_PERMISSIONS
 
 from nti.dataserver.interfaces import IUser
 
@@ -56,11 +61,13 @@ from nti.links.links import Link
 
 from nti.traversal.traversal import find_interface
 
+
 def raise_error(data, tb=None,
                 factory=hexc.HTTPUnprocessableEntity,
                 request=None):
     request = request or get_current_request()
     raise_json_error(request, factory, data, tb)
+
 
 class CompletionContextMixin(object):
 
@@ -70,15 +77,17 @@ class CompletionContextMixin(object):
 
     @Lazy
     def __acl__(self):
-        # TODO: Rather than having this layer of indirection here, we might
-        # be able to get away with a set of custom permissions that the existing
-        # ICompletionContext (course, etc) acl providers add to their existing acls.
-        # That may make things easier to implement other ICompletionContext objects going
-        # forward
         provider = component.queryMultiAdapter((self.completion_context, self), ICompletionContextACLProvider)
-        return provider.__acl__ if provider is not None else acl_from_aces(ace_denying_all())
+        if provider is None:
+            # For tests
+            aces = [ace_allowing(ROLE_ADMIN, ALL_PERMISSIONS, type(self)),
+                    ace_denying_all()]
+            result = acl_from_aces(aces)
+        else:
+            result = provider.__acl__
+        return result
 
-        
+
 _USERS_SUBPATH = u'users'
 
 class UserTraversableMixin(object):
