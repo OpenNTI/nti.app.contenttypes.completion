@@ -29,8 +29,6 @@ from nti.app.contenttypes.completion.interfaces import ICompletionContextCohort
 from nti.app.contenttypes.completion.interfaces import ICompletionContextProgress
 from nti.app.contenttypes.completion.interfaces import ICompletionContextUserProgress
 
-from nti.app.contenttypes.completion.views import MessageFactory as _
-
 from nti.contenttypes.completion.authorization import ACT_LIST_PROGRESS
 from nti.contenttypes.completion.authorization import ACT_VIEW_PROGRESS
 
