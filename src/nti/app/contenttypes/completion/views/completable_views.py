@@ -36,6 +36,8 @@ from nti.contenttypes.completion.interfaces import ICompletionContext
 from nti.contenttypes.completion.interfaces import ICompletableItemContainer
 from nti.contenttypes.completion.interfaces import IRequiredCompletableItemProvider
 
+from nti.contenttypes.completion.utils import get_completable_items_for_user
+
 from nti.dataserver import authorization as nauth
 
 from nti.dataserver.interfaces import IUser
@@ -81,16 +83,21 @@ class AbstractCompletionRequiredView(AbstractAuthenticatedView):
              request_method='GET')
 class CompletionDefaultView(AbstractCompletionRequiredView):
     """
-    A view to fetch the default required :class:`ICompletableItem` objects for
-    the :class:`ICompletionContext`.
+    A view to fetch the the items that are neither explicitly  'required' or
+    'optional' :class:`ICompletableItem` objects for the
+    :class:`ICompletionContext`.
     """
 
     def __call__(self):
-        # TODO: Need to return set of default ICompletableItems
+        possible_items = get_completable_items_for_user(self.remoteUser,
+                                                        self.completion_context)
+        possible_item_ntiids = set(x.ntiid for x in possible_items)
         result = LocatedExternalDict()
         required_keys = self.completable_container.get_required_keys()
-        result[ITEMS] = required_keys
-        result[TOTAL] = result[ITEM_COUNT] = len(required_keys)
+        optional_keys = self.completable_container.get_optional_keys()
+        result[ITEMS] = result_items = possible_item_ntiids - set(required_keys) - set(optional_keys)
+        result[ITEM_COUNT] = len(result_items)
+        result[TOTAL] = len(possible_item_ntiids)
         return result
 
 
@@ -309,7 +316,7 @@ class CompletableItemsView(AbstractCompletionRequiredView):
         if user is None:
             user = self.remoteUser
         return user
-    
+
     def __call__(self):
         user = self.user
 
@@ -321,8 +328,8 @@ class CompletableItemsView(AbstractCompletionRequiredView):
         if user != self.remoteUser:
             if not has_permission(nauth.ACT_UPDATE, self.context, self.request):
                 raise hexc.HTTPForbidden()
-        
-        
+
+
         result = LocatedExternalDict()
         result.__parent__ = self.context.__parent__
         result.__name__ = self.context.__name__
