@@ -58,6 +58,7 @@ setup(
         'setuptools',
         'nti.contenttypes.completion',
         'zope.component',
+        'zope.generations',
         'zope.interface',
         'zope.security',
     ],
