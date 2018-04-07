@@ -78,6 +78,7 @@ class CompletionContextProgressFactory(object):
         A map of ntiid to required completable items.
         """
         result = {}
+        # pylint: disable=not-an-iterable
         for completable_provider in self.required_item_providers:
             for item in completable_provider.iter_items(self.user):
                 result[item.ntiid] = item
@@ -102,13 +103,16 @@ class CompletionContextProgressFactory(object):
         completed items that are required.
         """
         result = {}
+        # pylint: disable=not-an-iterable,unsupported-membership-test
         for required_ntiid in self.completable_items:
             if required_ntiid in self.user_completed_items:
+                # pylint: disable=unsubscriptable-object
                 result[required_ntiid] = self.user_completed_items[required_ntiid]
         return result
 
     def _get_last_mod(self):
         if self.user_required_completed_items:
+            # pylint: disable=no-member
             return max(x.CompletedDate for x in self.user_required_completed_items.values())
 
     def __call__(self):
