@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-.. $Id: decorators.py 113814 2017-05-31 02:18:58Z josh.zuech $
+.. $Id$
 """
 
 from __future__ import division
@@ -118,7 +118,8 @@ class CompletionContextProgressFactory(object):
         completed_count = len(self.user_required_completed_items)
         max_possible = len(self.completable_items)
         has_progress = bool(completed_count)
-        # We probably always want to return this progress, even if there is none.
+        # We probably always want to return this progress, even if there is
+        # none.
         progress = CompletionContextProgress(NTIID=ntiid,
                                              AbsoluteProgress=completed_count,
                                              MaxPossibleProgress=max_possible,
