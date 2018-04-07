@@ -8,7 +8,13 @@
     <include package="zope.component" />
 	<include package="zope.security" />
 
+	<include package="nti.app.site" />
 	<include package="nti.contenttypes.completion" />
+
+	<!-- Generations -->
+	<utility factory=".generations.install._SchemaManager"
+			 name="nti.dataserver-app-contenttypes-completion"
+			 provides="zope.generations.interfaces.IInstallableSchemaManager" />
 
     <!-- Permissions -->
     <include package="zope.securitypolicy" file="meta.zcml" />
@@ -26,7 +32,6 @@
              provides="nti.contenttypes.completion.interfaces.IProgress"
              for="nti.coremetadata.interfaces.IUser
                   nti.contenttypes.completion.interfaces.ICompletionContext" />
-
 
     <subscriber factory=".adapters.PrincipalCompletedItemsProvider"
                 provides="nti.contenttypes.completion.interfaces.ICompletedItemProvider"
@@ -104,5 +109,9 @@
                 provides="nti.externalization.interfaces.IExternalMappingDecorator"
                 for="nti.contenttypes.completion.interfaces.ICompletableItem
                      pyramid.interfaces.IRequest" />
+
+	<!-- Index  -->
+	<adapter factory=".adapters._completed_item_to_site" />
+	<adapter factory=".adapters._completed_item_to_context_ntiid" />
 
 </configure>

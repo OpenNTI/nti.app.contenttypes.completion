@@ -13,10 +13,15 @@ from zope import interface
 
 from zope.cachedescriptors.property import Lazy
 
+from zope.component.hooks import getSite
+
 from nti.coremetadata.interfaces import IUser
 
 from nti.contenttypes.completion.interfaces import IProgress
+from nti.contenttypes.completion.interfaces import ISiteAdapter
+from nti.contenttypes.completion.interfaces import ICompletedItem
 from nti.contenttypes.completion.interfaces import ICompletionContext
+from nti.contenttypes.completion.interfaces import IContextNTIIDAdapter
 from nti.contenttypes.completion.interfaces import ICompletedItemProvider
 from nti.contenttypes.completion.interfaces import IRequiredCompletableItemProvider
 from nti.contenttypes.completion.interfaces import IPrincipalCompletedItemContainer
@@ -24,7 +29,14 @@ from nti.contenttypes.completion.interfaces import ICompletionContextCompletionP
 
 from nti.contenttypes.completion.progress import CompletionContextProgress
 
+from nti.contenttypes.courses.interfaces import ICourseInstance
+from nti.contenttypes.courses.interfaces import ICourseCatalogEntry
+    
 from nti.ntiids.oids import to_external_ntiid_oid
+
+from nti.traversal.traversal import find_interface
+
+from nti.site.interfaces import IHostPolicyFolder
 
 logger = __import__('logging').getLogger(__name__)
 
@@ -144,3 +156,40 @@ class CompletionContextProgressFactory(object):
 @interface.implementer(IProgress)
 def _completion_context_progress(user, context):
     return CompletionContextProgressFactory(user, context)()
+
+
+# catalog
+
+
+class _NTIID(object):
+
+    __slots__ = ('ntiid',)
+
+    def __init__(self, ntiid):
+        self.ntiid = ntiid
+
+
+@component.adapter(ICompletedItem)
+@interface.implementer(IContextNTIIDAdapter)
+def _completed_item_to_context_ntiid(item):
+    context = find_interface(item, ICompletionContext, strict=False)
+    if ICourseInstance.providedBy(context):
+        context = ICourseCatalogEntry(context, None)
+    ntiid = getattr(context, 'ntiid', None)
+    return _NTIID(ntiid) if ntiid else None
+
+
+class _Site(object):
+
+    __slots__ = ('site',)
+
+    def __init__(self, site):
+        self.site = site
+
+
+@component.adapter(ICompletedItem)
+@interface.implementer(ISiteAdapter)
+def _completed_item_to_site(item):
+    site = find_interface(item, IHostPolicyFolder, strict=False)
+    site = getSite() if site is None else site
+    return _Site(site.__name__) if site is not None else None
