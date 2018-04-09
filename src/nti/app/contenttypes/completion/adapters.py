@@ -21,16 +21,12 @@ from nti.contenttypes.completion.interfaces import IProgress
 from nti.contenttypes.completion.interfaces import ISiteAdapter
 from nti.contenttypes.completion.interfaces import ICompletedItem
 from nti.contenttypes.completion.interfaces import ICompletionContext
-from nti.contenttypes.completion.interfaces import IContextNTIIDAdapter
 from nti.contenttypes.completion.interfaces import ICompletedItemProvider
 from nti.contenttypes.completion.interfaces import IRequiredCompletableItemProvider
 from nti.contenttypes.completion.interfaces import IPrincipalCompletedItemContainer
 from nti.contenttypes.completion.interfaces import ICompletionContextCompletionPolicy
 
 from nti.contenttypes.completion.progress import CompletionContextProgress
-
-from nti.contenttypes.courses.interfaces import ICourseInstance
-from nti.contenttypes.courses.interfaces import ICourseCatalogEntry
     
 from nti.ntiids.oids import to_external_ntiid_oid
 
@@ -159,24 +155,6 @@ def _completion_context_progress(user, context):
 
 
 # catalog
-
-
-class _NTIID(object):
-
-    __slots__ = ('ntiid',)
-
-    def __init__(self, ntiid):
-        self.ntiid = ntiid
-
-
-@component.adapter(ICompletedItem)
-@interface.implementer(IContextNTIIDAdapter)
-def _completed_item_to_context_ntiid(item):
-    context = find_interface(item, ICompletionContext, strict=False)
-    if ICourseInstance.providedBy(context):
-        context = ICourseCatalogEntry(context, None)
-    ntiid = getattr(context, 'ntiid', None)
-    return _NTIID(ntiid) if ntiid else None
 
 
 class _Site(object):
