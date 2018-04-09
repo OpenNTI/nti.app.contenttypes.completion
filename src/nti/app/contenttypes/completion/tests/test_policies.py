@@ -8,7 +8,6 @@ from __future__ import absolute_import
 # pylint: disable=protected-access,too-many-public-methods,arguments-differ
 
 from hamcrest import is_
-from hamcrest import none
 from hamcrest import is_not
 from hamcrest import not_none
 from hamcrest import has_length

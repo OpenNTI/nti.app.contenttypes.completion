@@ -26,15 +26,17 @@ from zope.traversing.interfaces import ITraversable
 
 from nti.app.contenttypes.completion import MessageFactory
 
+from nti.app.contenttypes.completion import PROGRESS_PATH_NAME
+from nti.app.contenttypes.completion import BUILD_COMPLETION_VIEW
 from nti.app.contenttypes.completion import COMPLETED_ITEMS_PATH_NAME
 from nti.app.contenttypes.completion import COMPLETION_PATH_NAME
+from nti.app.contenttypes.completion import USER_DATA_COMPLETION_VIEW
 from nti.app.contenttypes.completion import COMPLETABLE_ITEMS_PATH_NAME
 from nti.app.contenttypes.completion import COMPLETION_POLICY_VIEW_NAME
 from nti.app.contenttypes.completion import COMPLETION_DEFAULT_VIEW_NAME
 from nti.app.contenttypes.completion import COMPLETION_REQUIRED_VIEW_NAME
 from nti.app.contenttypes.completion import COMPLETION_NOT_REQUIRED_VIEW_NAME
 from nti.app.contenttypes.completion import DEFAULT_REQUIRED_POLICY_PATH_NAME
-from nti.app.contenttypes.completion import PROGRESS_PATH_NAME
 
 from nti.app.contenttypes.completion.interfaces import ICompletedItemsContext
 from nti.app.contenttypes.completion.interfaces import ICompletionContextACLProvider
@@ -102,8 +104,7 @@ class UserTraversableMixin(object):
         if self.CONSUME_SUBPATH:
             if not remaining or subpath != _USERS_SUBPATH:
                 raise LocationError(subpath)
-            username = remaining.pop()
-
+            username = remaining.pop(0)
 
         user = User.get_user(username)
         if user is None:
