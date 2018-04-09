@@ -112,6 +112,5 @@
 
 	<!-- Index  -->
 	<adapter factory=".adapters._completed_item_to_site" />
-	<adapter factory=".adapters._completed_item_to_context_ntiid" />
 
 </configure>
