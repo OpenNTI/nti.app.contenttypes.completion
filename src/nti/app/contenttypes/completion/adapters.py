@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-.. $Id: decorators.py 113814 2017-05-31 02:18:58Z josh.zuech $
+.. $Id$
 """
 
 from __future__ import division
@@ -13,9 +13,13 @@ from zope import interface
 
 from zope.cachedescriptors.property import Lazy
 
+from zope.component.hooks import getSite
+
 from nti.coremetadata.interfaces import IUser
 
 from nti.contenttypes.completion.interfaces import IProgress
+from nti.contenttypes.completion.interfaces import ISiteAdapter
+from nti.contenttypes.completion.interfaces import ICompletedItem
 from nti.contenttypes.completion.interfaces import ICompletionContext
 from nti.contenttypes.completion.interfaces import ICompletedItemProvider
 from nti.contenttypes.completion.interfaces import IRequiredCompletableItemProvider
@@ -23,8 +27,12 @@ from nti.contenttypes.completion.interfaces import IPrincipalCompletedItemContai
 from nti.contenttypes.completion.interfaces import ICompletionContextCompletionPolicy
 
 from nti.contenttypes.completion.progress import CompletionContextProgress
-
+    
 from nti.ntiids.oids import to_external_ntiid_oid
+
+from nti.traversal.traversal import find_interface
+
+from nti.site.interfaces import IHostPolicyFolder
 
 logger = __import__('logging').getLogger(__name__)
 
@@ -78,6 +86,7 @@ class CompletionContextProgressFactory(object):
         A map of ntiid to required completable items.
         """
         result = {}
+        # pylint: disable=not-an-iterable
         for completable_provider in self.required_item_providers:
             for item in completable_provider.iter_items(self.user):
                 result[item.ntiid] = item
@@ -102,13 +111,16 @@ class CompletionContextProgressFactory(object):
         completed items that are required.
         """
         result = {}
+        # pylint: disable=not-an-iterable,unsupported-membership-test
         for required_ntiid in self.completable_items:
             if required_ntiid in self.user_completed_items:
+                # pylint: disable=unsubscriptable-object
                 result[required_ntiid] = self.user_completed_items[required_ntiid]
         return result
 
     def _get_last_mod(self):
         if self.user_required_completed_items:
+            # pylint: disable=no-member
             return max(x.CompletedDate for x in self.user_required_completed_items.values())
 
     def __call__(self):
@@ -118,7 +130,8 @@ class CompletionContextProgressFactory(object):
         completed_count = len(self.user_required_completed_items)
         max_possible = len(self.completable_items)
         has_progress = bool(completed_count)
-        # We probably always want to return this progress, even if there is none.
+        # We probably always want to return this progress, even if there is
+        # none.
         progress = CompletionContextProgress(NTIID=ntiid,
                                              AbsoluteProgress=completed_count,
                                              MaxPossibleProgress=max_possible,
@@ -139,3 +152,22 @@ class CompletionContextProgressFactory(object):
 @interface.implementer(IProgress)
 def _completion_context_progress(user, context):
     return CompletionContextProgressFactory(user, context)()
+
+
+# catalog
+
+
+class _Site(object):
+
+    __slots__ = ('site',)
+
+    def __init__(self, site):
+        self.site = site
+
+
+@component.adapter(ICompletedItem)
+@interface.implementer(ISiteAdapter)
+def _completed_item_to_site(item):
+    site = find_interface(item, IHostPolicyFolder, strict=False)
+    site = getSite() if site is None else site
+    return _Site(site.__name__) if site is not None else None
