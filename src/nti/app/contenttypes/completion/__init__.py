@@ -21,3 +21,6 @@ DEFAULT_REQUIRED_POLICY_PATH_NAME = u'DefaultRequiredPolicy'
 COMPLETABLE_ITEMS_PATH_NAME = u'CompletableItems'
 PROGRESS_PATH_NAME = u'Progress'
 COMPLETED_ITEMS_PATH_NAME = u'CompletedItems'
+
+BUILD_COMPLETION_VIEW = u'BuildCompletion'
+USER_DATA_COMPLETION_VIEW = u'UserCompletionData'

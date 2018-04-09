@@ -20,23 +20,27 @@ from nti.dataserver.interfaces import IACLProvider
 from nti.dataserver.interfaces import IEnumerableEntityContainer
 from nti.dataserver.interfaces import IUser
 
+
 class ICompletionContextContained(interface.Interface):
 
     completion_context = Object(ICompletionContext,
                                 title=u"The completion context this progress is context is rooted",
                                 required=True)
 
+
 class ICompletedItemsContext(ICompletionContextContained):
-    
+
     user = Object(IUser,
                   title=u'The user we are scoped to',
                   required=False)
+
 
 class ICompletionContextProgress(ICompletionContextContained):
     """
     Something that represents all the progress in a completion
     context.
     """
+
 
 class ICompletionContextUserProgress(ICompletionContextContained):
     """
@@ -47,12 +51,12 @@ class ICompletionContextUserProgress(ICompletionContextContained):
                   title=u'The user we are scoped to',
                   required=False)
 
+
 class ICompletionContextACLProvider(IACLProvider):
     """
     An ACL provider giving permissions beneath an ICompletionContext.
     Typically adapted from (ICompletionContext, *)
     """
-    pass
 
 
 class ICompletionContextCohort(IEnumerableEntityContainer):

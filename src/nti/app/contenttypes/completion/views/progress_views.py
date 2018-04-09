@@ -62,7 +62,7 @@ class ProgressContextView(AbstractAuthenticatedView):
 
     @view_config(permission=ACT_VIEW_PROGRESS,
                  context=ICompletionContextProgress)
-    def aggegate_stats(self):
+    def aggregate_stats(self):
         if self.completion_context_policy is None:
             raise hexc.HTTPNotFound()
 
