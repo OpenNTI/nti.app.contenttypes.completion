@@ -106,8 +106,10 @@ class BuildCompletionDataView(AbstractAuthenticatedView,
             self.do_reset_completed()
         item_providers = None
         item_count = 0
+        user_count = 0
         logger.info('Building completion data')
         for user in self.users:
+            user_count += 1
             # Attempt to re-use providers, which may have internal caching
             if item_providers is None:
                 item_providers = component.subscribers((self.context.completion_context,),
@@ -127,7 +129,7 @@ class BuildCompletionDataView(AbstractAuthenticatedView,
         result.__name__ = self.request.view_name
         result.__parent__ = self.request.context
         result[ITEM_COUNT] = item_count
-        result['UserCount'] = len(self.users)
+        result['UserCount'] = user_count
         return result
 
 
