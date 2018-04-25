@@ -122,7 +122,7 @@ class BuildCompletionDataView(AbstractAuthenticatedView,
             item_count = item_count or len(completable_items)
             self.build_completion_data(user, completable_items)
         logger.info('Finished building completion data for %s users (items=~%s)',
-                    len(self.users),
+                    user_count,
                     item_count)
 
         result = LocatedExternalDict()
