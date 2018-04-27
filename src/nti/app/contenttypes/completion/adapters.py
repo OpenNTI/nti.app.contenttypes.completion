@@ -27,7 +27,7 @@ from nti.contenttypes.completion.interfaces import IPrincipalCompletedItemContai
 from nti.contenttypes.completion.interfaces import ICompletionContextCompletionPolicy
 
 from nti.contenttypes.completion.progress import CompletionContextProgress
-    
+
 from nti.ntiids.oids import to_external_ntiid_oid
 
 from nti.traversal.traversal import find_interface

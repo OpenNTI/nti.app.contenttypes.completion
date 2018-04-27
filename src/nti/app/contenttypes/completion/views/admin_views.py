@@ -24,6 +24,7 @@ from nti.app.contenttypes.completion.interfaces import ICompletedItemsContext
 from nti.app.contenttypes.completion.interfaces import ICompletionContextCohort
 
 from nti.app.contenttypes.completion.views import BUILD_COMPLETION_VIEW
+from nti.app.contenttypes.completion.views import RESET_COMPLETION_VIEW
 from nti.app.contenttypes.completion.views import USER_DATA_COMPLETION_VIEW
 
 from nti.app.externalization.view_mixins import ModeledContentUploadRequestUtilsMixin
@@ -52,18 +53,20 @@ logger = __import__('logging').getLogger(__name__)
 @view_config(route_name='objects.generic.traversal',
              renderer='rest',
              context=ICompletedItemsContext,
-             name=BUILD_COMPLETION_VIEW,
+             name=RESET_COMPLETION_VIEW,
              permission=nauth.ACT_NTI_ADMIN,
              request_method='POST')
-class BuildCompletionDataView(AbstractAuthenticatedView,
+class ResetCompletionDataView(AbstractAuthenticatedView,
                               ModeledContentUploadRequestUtilsMixin):
     """
-    A view to build completion data for a :class:`ICompletionContext`.
+    A view to remove completion data for a :class:`ICompletionContext`;
+    probably only useful for testing purposes since we do not turn around
+    and rebuild data.
     """
 
     def readInput(self, value=None):
         if self.request.body:
-            values = super(BuildCompletionDataView, self).readInput(value)
+            values = super(ResetCompletionDataView, self).readInput(value)
         else:
             values = self.request.params
         return CaseInsensitiveDict(values)
@@ -71,15 +74,6 @@ class BuildCompletionDataView(AbstractAuthenticatedView,
     @Lazy
     def _params(self):
         return self.readInput()
-
-    @property
-    def reset_completed(self):
-        default = False
-        param = self._params.get('reset') \
-            or  self._params.get('reset_completed') \
-            or  self._params.get('ResetCompleted')
-        result = is_true(param) if param else default
-        return result
 
     @Lazy
     def users(self):
@@ -95,6 +89,32 @@ class BuildCompletionDataView(AbstractAuthenticatedView,
             user_container = component.getMultiAdapter((user, self.context.completion_context),
                                                        IPrincipalCompletedItemContainer)
             user_container.clear()
+
+    def __call__(self):
+        self.do_reset_completed()
+        return hexc.HTTPNoContent()
+
+
+@view_config(route_name='objects.generic.traversal',
+             renderer='rest',
+             context=ICompletedItemsContext,
+             name=BUILD_COMPLETION_VIEW,
+             permission=nauth.ACT_NTI_ADMIN,
+             request_method='POST')
+class BuildCompletionDataView(ResetCompletionDataView):
+    """
+    A view to build completion data for a :class:`ICompletionContext`,
+    optionally resetting completed data.
+    """
+
+    @property
+    def reset_completed(self):
+        default = False
+        param = self._params.get('reset') \
+            or  self._params.get('reset_completed') \
+            or  self._params.get('ResetCompleted')
+        result = is_true(param) if param else default
+        return result
 
     def build_completion_data(self, user, completable_items):
         for item in completable_items:

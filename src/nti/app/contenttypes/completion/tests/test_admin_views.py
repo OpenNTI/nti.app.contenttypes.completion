@@ -20,6 +20,7 @@ from zope import component
 
 from nti.app.contenttypes.completion import COMPLETION_PATH_NAME
 from nti.app.contenttypes.completion import BUILD_COMPLETION_VIEW
+from nti.app.contenttypes.completion import RESET_COMPLETION_VIEW
 from nti.app.contenttypes.completion import USER_DATA_COMPLETION_VIEW
 from nti.app.contenttypes.completion import COMPLETED_ITEMS_PATH_NAME
 
@@ -58,7 +59,7 @@ class TestAdminViews(ApplicationLayerTest):
     @WithSharedApplicationMockDS(users=True, testapp=True, default_authenticate=True)
     def test_admin_views(self):
         """
-        Test admin views to fetch user completion data as well as buiding that data.
+        Test admin views to fetch user completion data as well as building that data.
         """
         now = datetime.utcnow()
         admin_username = 'sjohnson@nextthought.com'
@@ -187,4 +188,44 @@ class TestAdminViews(ApplicationLayerTest):
         assert_that(res['CompletedItems'], has_length(0))
 
         res = self.testapp.get(user2_stats_url).json_body
+        assert_that(res['CompletedItems'], has_length(0))
+
+        # Test reset view
+        reset_url = '/dataserver2/Objects/%s/%s/%s/@@%s' % (context_ntiid,
+                                                            COMPLETION_PATH_NAME,
+                                                            COMPLETED_ITEMS_PATH_NAME,
+                                                            RESET_COMPLETION_VIEW)
+        user1_reset_url = '/dataserver2/Objects/%s/%s/%s/%s/%s/@@%s' % (context_ntiid,
+                                                                        COMPLETION_PATH_NAME,
+                                                                        COMPLETED_ITEMS_PATH_NAME,
+                                                                        'users',
+                                                                        user1_username,
+                                                                        RESET_COMPLETION_VIEW)
+        user2_reset_url = '/dataserver2/Objects/%s/%s/%s/%s/%s/@@%s' % (context_ntiid,
+                                                                        COMPLETION_PATH_NAME,
+                                                                        COMPLETED_ITEMS_PATH_NAME,
+                                                                        'users',
+                                                                        user2_username,
+                                                                        RESET_COMPLETION_VIEW)
+
+        with mock_dataserver.mock_db_trans(self.ds):
+            user1 = User.get_user(user1_username)
+            # Add completed item
+            user_container = component.queryMultiAdapter((user1, completion_context),
+                                                         IPrincipalCompletedItemContainer)
+            completed_item1 = CompletedItem(Principal=user1,
+                                            Item=item1,
+                                            CompletedDate=now)
+            user_container.add_completed_item(completed_item1)
+
+        self.testapp.post_json(user2_reset_url)
+        res = self.testapp.get(user1_stats_url).json_body
+        assert_that(res['CompletedItems'], has_length(1))
+
+        self.testapp.post_json(user1_reset_url)
+        res = self.testapp.get(user1_stats_url).json_body
+        assert_that(res['CompletedItems'], has_length(0))
+
+        self.testapp.post_json(reset_url)
+        res = self.testapp.get(user1_stats_url).json_body
         assert_that(res['CompletedItems'], has_length(0))
