@@ -22,5 +22,6 @@ COMPLETABLE_ITEMS_PATH_NAME = u'CompletableItems'
 PROGRESS_PATH_NAME = u'Progress'
 COMPLETED_ITEMS_PATH_NAME = u'CompletedItems'
 
+RESET_COMPLETION_VIEW = u'ResetCompletion'
 BUILD_COMPLETION_VIEW = u'BuildCompletion'
 USER_DATA_COMPLETION_VIEW = u'UserCompletionData'

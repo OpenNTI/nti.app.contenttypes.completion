@@ -27,9 +27,10 @@ from zope.traversing.interfaces import ITraversable
 from nti.app.contenttypes.completion import MessageFactory
 
 from nti.app.contenttypes.completion import PROGRESS_PATH_NAME
-from nti.app.contenttypes.completion import BUILD_COMPLETION_VIEW
-from nti.app.contenttypes.completion import COMPLETED_ITEMS_PATH_NAME
 from nti.app.contenttypes.completion import COMPLETION_PATH_NAME
+from nti.app.contenttypes.completion import BUILD_COMPLETION_VIEW
+from nti.app.contenttypes.completion import RESET_COMPLETION_VIEW
+from nti.app.contenttypes.completion import COMPLETED_ITEMS_PATH_NAME
 from nti.app.contenttypes.completion import USER_DATA_COMPLETION_VIEW
 from nti.app.contenttypes.completion import COMPLETABLE_ITEMS_PATH_NAME
 from nti.app.contenttypes.completion import COMPLETION_POLICY_VIEW_NAME
