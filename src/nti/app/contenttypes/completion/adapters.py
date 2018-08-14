@@ -154,6 +154,12 @@ def _completion_context_progress(user, context):
     return CompletionContextProgressFactory(user, context)()
 
 
+@component.adapter(ICompletedItem)
+@interface.implementer(IHostPolicyFolder)
+def _completed_item_to_site(item):
+    return find_interface(item, IHostPolicyFolder, strict=False)
+
+
 # catalog
 
 
@@ -167,7 +173,7 @@ class _Site(object):
 
 @component.adapter(ICompletedItem)
 @interface.implementer(ISiteAdapter)
-def _completed_item_to_site(item):
-    site = find_interface(item, IHostPolicyFolder, strict=False)
+def _completed_item_to_siteadapter(item):
+    site = IHostPolicyFolder(item, None)
     site = getSite() if site is None else site
     return _Site(site.__name__) if site is not None else None
