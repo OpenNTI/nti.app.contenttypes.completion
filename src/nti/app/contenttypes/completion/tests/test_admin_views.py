@@ -60,7 +60,7 @@ class TestAdminViews(ApplicationLayerTest):
     layer = CompletionTestLayer
 
     @WithSharedApplicationMockDS(users=True, testapp=True, default_authenticate=True)
-    def xtest_admin_views(self):
+    def test_admin_views(self):
         """
         Test admin views to fetch user completion data as well as building that data.
         """
