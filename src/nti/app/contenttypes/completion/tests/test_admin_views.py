@@ -35,6 +35,7 @@ from nti.app.testing.decorators import WithSharedApplicationMockDS
 
 from nti.contenttypes.completion.completion import CompletedItem
 
+from nti.contenttypes.completion.interfaces import ICompletionContext
 from nti.contenttypes.completion.interfaces import IPrincipalCompletedItemContainer
 
 from nti.coremetadata.interfaces import IContained
@@ -217,6 +218,9 @@ class TestAdminViews(ApplicationLayerTest):
                                             Item=item1,
                                             CompletedDate=now)
             user_container.add_completed_item(completed_item1)
+            
+            context = ICompletionContext(completed_item1, None)
+            assert_that(context, is_(not_none()))
 
         self.testapp.post_json(user2_reset_url)
         res = self.testapp.get(user1_stats_url).json_body

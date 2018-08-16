@@ -160,6 +160,12 @@ def _completed_item_to_site(item):
     return find_interface(item, IHostPolicyFolder, strict=False)
 
 
+@component.adapter(ICompletedItem)
+@interface.implementer(ICompletionContext)
+def _completed_item_to_context(item):
+    return find_interface(item, ICompletionContext, strict=False)
+
+
 # catalog
 
 
