@@ -115,4 +115,7 @@
 	<adapter factory=".adapters._completed_item_to_context" />
 	<adapter factory=".adapters._completed_item_to_siteadapter" />
 
+	<!-- Subscribers  -->
+	<subscriber handler=".subscribers._on_user_deleted" />
+
 </configure>
