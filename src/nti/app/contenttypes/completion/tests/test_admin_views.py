@@ -38,6 +38,8 @@ from nti.contenttypes.completion.completion import CompletedItem
 from nti.contenttypes.completion.interfaces import ICompletionContext
 from nti.contenttypes.completion.interfaces import IPrincipalCompletedItemContainer
 
+from nti.contenttypes.completion.utils import get_indexed_completed_items
+
 from nti.coremetadata.interfaces import IContained
 
 from nti.dataserver.tests import mock_dataserver
@@ -58,7 +60,7 @@ class TestAdminViews(ApplicationLayerTest):
     layer = CompletionTestLayer
 
     @WithSharedApplicationMockDS(users=True, testapp=True, default_authenticate=True)
-    def test_admin_views(self):
+    def xtest_admin_views(self):
         """
         Test admin views to fetch user completion data as well as building that data.
         """
@@ -233,3 +235,39 @@ class TestAdminViews(ApplicationLayerTest):
         self.testapp.post_json(reset_url)
         res = self.testapp.get(user1_stats_url).json_body
         assert_that(res['CompletedItems'], has_length(0))
+
+    @WithSharedApplicationMockDS(users=True, testapp=True, default_authenticate=True)
+    def test_user_deletion(self):
+        now = datetime.utcnow()
+        user1_username = 'user1_username'
+        admin_username = 'sjohnson@nextthought.com'
+        with mock_dataserver.mock_db_trans(self.ds):
+            self._create_user(user1_username)
+            completion_context = PersistentCompletionContext()
+            completion_context.containerId = 'container_id'
+            interface.alsoProvides(completion_context, IContained)
+
+            item1 = PersistentCompletableItem('ntiid1')
+            item1.containerId = 'container_id'
+
+            user = User.get_user(admin_username)
+            for x in (completion_context, item1):
+                user.addContainedObject(x)
+
+            # Add completed item
+            user1 = User.get_user(user1_username)
+            user_container = component.queryMultiAdapter((user1, completion_context),
+                                                         IPrincipalCompletedItemContainer)
+            completed_item1 = CompletedItem(Principal=user1,
+                                            Item=item1,
+                                            CompletedDate=now)
+            user_container.add_completed_item(completed_item1)
+            
+        with mock_dataserver.mock_db_trans(self.ds):
+            items = get_indexed_completed_items(user1_username)
+            assert_that(items, has_length(1))
+
+        with mock_dataserver.mock_db_trans(self.ds):
+            User.delete_entity(user1_username)
+            items = get_indexed_completed_items(user1_username)
+            assert_that(items, has_length(0))
