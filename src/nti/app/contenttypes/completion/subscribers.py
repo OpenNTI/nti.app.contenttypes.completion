@@ -27,6 +27,7 @@ def _on_user_deleted(user, unused_event=None):
     """
     When a user is deleted delete its completed items
     """
+    logger.info("Removing completed items data for user %s", user)
     username = user.username
     items = get_indexed_completed_items((username,))
     contexts = {ICompletionContext(x, None) for x in items}
