@@ -18,7 +18,7 @@ from zope.intid.interfaces import IIntIds
 
 from nti.contenttypes.completion.index import install_completed_item_catalog
 
-generation = 2
+generation = 3
 
 logger = __import__('logging').getLogger(__name__)
 
