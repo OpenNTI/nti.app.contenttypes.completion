@@ -31,7 +31,7 @@ def _on_user_deleted(user, unused_event=None):
     username = user.username
     items = get_indexed_completed_items((username,))
     contexts = {ICompletionContext(x, None) for x in items}
-    containers = {ICompletedItemContainer(x) for x in contexts}
+    containers = {ICompletedItemContainer(x, None) for x in contexts}
     containers.discard(None)
     for container in containers:
         container.remove_principal(username)
