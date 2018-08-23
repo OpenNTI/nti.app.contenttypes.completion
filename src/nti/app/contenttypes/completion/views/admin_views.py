@@ -77,6 +77,7 @@ class ResetCompletionDataView(AbstractAuthenticatedView,
 
     @Lazy
     def users(self):
+        # pylint: disable=no-member
         if self.context.user is not None:
             result = (self.context.user,)
         else:
@@ -84,6 +85,7 @@ class ResetCompletionDataView(AbstractAuthenticatedView,
         return result
 
     def do_reset_completed(self):
+        # pylint: disable=no-member,not-an-iterable 
         logger.info('Clearing user completed item containers')
         for user in self.users:
             user_container = component.getMultiAdapter((user, self.context.completion_context),
@@ -110,14 +112,16 @@ class BuildCompletionDataView(ResetCompletionDataView):
     @property
     def reset_completed(self):
         default = False
+        # pylint: disable=no-member
         param = self._params.get('reset') \
-            or  self._params.get('reset_completed') \
-            or  self._params.get('ResetCompleted')
+             or self._params.get('reset_completed') \
+             or self._params.get('ResetCompleted')
         result = is_true(param) if param else default
         return result
 
     def build_completion_data(self, user, completable_items):
         for item in completable_items:
+            # pylint: disable=no-member
             update_completion(item, item.ntiid, user,
                               self.context.completion_context)
 
@@ -128,6 +132,7 @@ class BuildCompletionDataView(ResetCompletionDataView):
         item_count = 0
         user_count = 0
         logger.info('Building completion data')
+        # pylint: disable=no-member,not-an-iterable 
         for user in self.users:
             user_count += 1
             # Attempt to re-use providers, which may have internal caching
@@ -166,6 +171,7 @@ class UserCompletionDataView(AbstractAuthenticatedView):
     """
 
     def __call__(self):
+        # pylint: disable=no-member
         user = self.context.user
         if user is None:
             raise hexc.HTTPNotFound()
@@ -191,4 +197,3 @@ class UserCompletionDataView(AbstractAuthenticatedView):
         result['RequiredItems'] = sorted(required_ntiids)
         result['OptionalItems'] = sorted(optional_ntiids)
         return result
-
