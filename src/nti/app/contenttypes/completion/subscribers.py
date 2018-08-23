@@ -14,6 +14,8 @@ from zope.component.hooks import getSite
 
 from zope.lifecycleevent.interfaces import IObjectRemovedEvent
 
+from zope.security.management import queryInteraction
+
 from nti.contenttypes.completion.interfaces import ICompletableItem
 from nti.contenttypes.completion.interfaces import ICompletionContext
 from nti.contenttypes.completion.interfaces import ICompletedItemContainer
@@ -25,6 +27,7 @@ from nti.coremetadata.interfaces import IUser
 from nti.dataserver.users.interfaces import IWillDeleteEntityEvent
 
 from nti.site.interfaces import IHostPolicyFolder
+
 
 logger = __import__('logging').getLogger(__name__)
 
@@ -51,13 +54,15 @@ def _on_completable_item_deleted(item, unused_event=None):
     """
     When a completable item is deleted delete its completed items
     """
-    logger.info("Removing completed items data for %s", item)
-    site = IHostPolicyFolder(item, None) or getSite()
-    items = get_indexed_completed_items(items=(item.ntiid,), sites=(site.__name__,))
-    # get completed item containers
-    contexts = {ICompletionContext(x, None) for x in items}
-    containers = {ICompletedItemContainer(x, None) for x in contexts}
-    containers.discard(None)
-    # remove item data
-    for container in containers:
-        container.remove_item(item)
+    if queryInteraction() is not None:
+        logger.info("Removing completed items data for %s", item)
+        site = IHostPolicyFolder(item, None) or getSite()
+        items = get_indexed_completed_items(items=(item.ntiid,),
+                                            sites=(site.__name__,))
+        # get completed item containers
+        contexts = {ICompletionContext(x, None) for x in items}
+        containers = {ICompletedItemContainer(x, None) for x in contexts}
+        containers.discard(None)
+        # remove item data
+        for container in containers:
+            container.remove_item(item)
