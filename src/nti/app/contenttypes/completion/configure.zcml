@@ -117,5 +117,8 @@
 
 	<!-- Subscribers  -->
 	<subscriber handler=".subscribers._on_user_deleted" />
+	<configure zcml:condition="have devmode">
+		<subscriber handler=".subscribers._on_completable_item_deleted" />
+	</configure>
 
 </configure>
