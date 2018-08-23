@@ -53,6 +53,7 @@ def _on_completable_item_deleted(item, unused_event=None):
     """
     When a completable item is deleted delete its completed items
     """
+    # We don't want to remove any items during a sync
     if queryInteraction() is not None:
         logger.info("Removing completed items data for %s", item)
         site = IHostPolicyFolder(item, None) or getSite()
