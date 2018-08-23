@@ -114,6 +114,7 @@
 	<adapter factory=".adapters._completed_item_to_site" />
 	<adapter factory=".adapters._completed_item_to_context" />
 	<adapter factory=".adapters._completed_item_to_siteadapter" />
+	<adapter factory=".adapters._completed_item_to_context_ntiid" />
 
 	<!-- Subscribers  -->
 	<subscriber handler=".subscribers._on_user_deleted" />

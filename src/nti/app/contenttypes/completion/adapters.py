@@ -21,6 +21,7 @@ from nti.contenttypes.completion.interfaces import IProgress
 from nti.contenttypes.completion.interfaces import ISiteAdapter
 from nti.contenttypes.completion.interfaces import ICompletedItem
 from nti.contenttypes.completion.interfaces import ICompletionContext
+from nti.contenttypes.completion.interfaces import IContextNTIIDAdapter
 from nti.contenttypes.completion.interfaces import ICompletedItemProvider
 from nti.contenttypes.completion.interfaces import IRequiredCompletableItemProvider
 from nti.contenttypes.completion.interfaces import IPrincipalCompletedItemContainer
@@ -183,3 +184,19 @@ def _completed_item_to_siteadapter(item):
     site = IHostPolicyFolder(item, None)
     site = getSite() if site is None else site
     return _Site(site.__name__) if site is not None else None
+
+
+class _NTIID(object):
+
+    __slots__ = ('ntiid',)
+
+    def __init__(self, ntiid):
+        self.ntiid = ntiid
+
+
+@component.adapter(ICompletedItem)
+@interface.implementer(IContextNTIIDAdapter)
+def _completed_item_to_context_ntiid(item):
+    context = find_interface(item, ICompletionContext, strict=False)
+    ntiid = getattr(context, 'ntiid', None) or to_external_ntiid_oid(context)
+    return _NTIID(ntiid) if ntiid else None
