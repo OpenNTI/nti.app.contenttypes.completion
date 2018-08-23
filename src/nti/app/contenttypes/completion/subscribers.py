@@ -28,7 +28,6 @@ from nti.dataserver.users.interfaces import IWillDeleteEntityEvent
 
 from nti.site.interfaces import IHostPolicyFolder
 
-
 logger = __import__('logging').getLogger(__name__)
 
 
