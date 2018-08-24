@@ -10,6 +10,7 @@ from __future__ import absolute_import
 from hamcrest import is_
 from hamcrest import contains
 from hamcrest import not_none
+from hamcrest import has_entry
 from hamcrest import has_length
 from hamcrest import assert_that
 
@@ -44,11 +45,12 @@ from nti.coremetadata.interfaces import IContained
 
 from nti.dataserver.tests import mock_dataserver
 
-from nti.dataserver.users import User
+from nti.dataserver.users.users import User
 
-from nti.externalization.externalization import StandardExternalFields
+from nti.externalization.interfaces import StandardExternalFields
 
 from nti.ntiids.oids import to_external_ntiid_oid
+from hamcrest.library.number.ordering_comparison import greater_than
 
 TOTAL = StandardExternalFields.TOTAL
 ITEMS = StandardExternalFields.ITEMS
@@ -122,6 +124,17 @@ class TestAdminViews(ApplicationLayerTest):
         assert_that(res['CompletedOptionalItems'], has_length(0))
         assert_that(res['CompletedRequiredItems'], has_length(0))
         assert_that(res['IncompleteRequiredItems'], has_length(0))
+
+        # check index
+        with mock_dataserver.mock_db_trans(self.ds):
+            items = get_indexed_completed_items(user1_username)
+            assert_that(items, has_length(1))
+        
+        # rebuild index
+        rebuild_url = '/dataserver2/@@RebuildCompletedItemsCatalog'
+        res = self.testapp.post(rebuild_url)
+        assert_that(res.json_body, 
+                    has_entry('Items', has_length(greater_than(1))))
 
         # Build data
         build_url = '/dataserver2/Objects/%s/%s/%s/@@%s' % (context_ntiid,
