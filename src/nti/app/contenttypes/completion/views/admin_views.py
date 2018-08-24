@@ -11,6 +11,7 @@ from __future__ import absolute_import
 from pyramid import httpexceptions as hexc
 
 from pyramid.view import view_config
+from pyramid.view import view_defaults
 
 from requests.structures import CaseInsensitiveDict
 
@@ -19,6 +20,8 @@ from zope import component
 from zope.cachedescriptors.property import Lazy
 
 from nti.app.base.abstract_views import AbstractAuthenticatedView
+
+from nti.app.contenttypes.completion.catalog import rebuild_completed_items_catalog
 
 from nti.app.contenttypes.completion.interfaces import ICompletedItemsContext
 from nti.app.contenttypes.completion.interfaces import ICompletionContextCohort
@@ -40,6 +43,8 @@ from nti.contenttypes.completion.utils import get_required_completable_items_for
 
 from nti.dataserver import authorization as nauth
 
+from nti.dataserver.interfaces import IDataserverFolder
+
 from nti.externalization.interfaces import LocatedExternalDict
 from nti.externalization.interfaces import StandardExternalFields
 
@@ -48,6 +53,23 @@ TOTAL = StandardExternalFields.TOTAL
 ITEM_COUNT = StandardExternalFields.ITEM_COUNT
 
 logger = __import__('logging').getLogger(__name__)
+
+
+@view_config(context=IDataserverFolder)
+@view_defaults(route_name='objects.generic.traversal',
+               renderer='rest',
+               request_method='POST',
+               permission=nauth.ACT_NTI_ADMIN,
+               name='RebuildCompletedItemsCatalog')
+class RebuildCompletedItemsCatalogView(AbstractAuthenticatedView):
+
+    def __call__(self):
+        seen = set()
+        items = rebuild_completed_items_catalog(seen)
+        result = LocatedExternalDict()
+        result[ITEMS] = items
+        result[ITEM_COUNT] = result[TOTAL] = len(seen)
+        return result
 
 
 @view_config(route_name='objects.generic.traversal',
