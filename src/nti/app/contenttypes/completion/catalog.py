@@ -49,6 +49,7 @@ def rebuild_completed_items_catalog(seen=None, metadata=True):
         index.clear()
     # reindex
     items = dict()
+    contexts = set()
     seen = set() if seen is None else seen
     metadata_catalog = get_metadata_catalog()
     intids = component.getUtility(IIntIds)
@@ -57,9 +58,9 @@ def rebuild_completed_items_catalog(seen=None, metadata=True):
             count = 0
             for context in get_completion_contexts():
                 doc_id = intids.queryId(context)
-                if doc_id is None or doc_id in seen:
+                if doc_id is None or doc_id in contexts:
                     continue
-                seen.add(doc_id)
+                contexts.add(doc_id)
                 for item in get_completed_items(context):
                     doc_id = intids.queryId(item)
                     if doc_id is None or doc_id in seen:
