@@ -13,11 +13,12 @@ from hamcrest import not_none
 from hamcrest import has_entry
 from hamcrest import has_length
 from hamcrest import assert_that
+from hamcrest import greater_than
 
 from datetime import datetime
 
-from zope import interface
 from zope import component
+from zope import interface
 
 from nti.app.contenttypes.completion import COMPLETION_PATH_NAME
 from nti.app.contenttypes.completion import BUILD_COMPLETION_VIEW
@@ -36,6 +37,7 @@ from nti.app.testing.decorators import WithSharedApplicationMockDS
 
 from nti.contenttypes.completion.completion import CompletedItem
 
+from nti.contenttypes.completion.interfaces import ICompletables
 from nti.contenttypes.completion.interfaces import ICompletionContext
 from nti.contenttypes.completion.interfaces import IPrincipalCompletedItemContainer
 
@@ -49,8 +51,10 @@ from nti.dataserver.users.users import User
 
 from nti.externalization.interfaces import StandardExternalFields
 
+from nti.ntiids.ntiids import find_object_with_ntiid
+
 from nti.ntiids.oids import to_external_ntiid_oid
-from hamcrest.library.number.ordering_comparison import greater_than
+
 
 TOTAL = StandardExternalFields.TOTAL
 ITEMS = StandardExternalFields.ITEMS
@@ -125,16 +129,28 @@ class TestAdminViews(ApplicationLayerTest):
         assert_that(res['CompletedRequiredItems'], has_length(0))
         assert_that(res['IncompleteRequiredItems'], has_length(0))
 
-        # check index
-        with mock_dataserver.mock_db_trans(self.ds):
-            items = get_indexed_completed_items(user1_username)
-            assert_that(items, has_length(1))
-        
-        # rebuild index
-        rebuild_url = '/dataserver2/@@RebuildCompletedItemsCatalog'
-        res = self.testapp.post(rebuild_url)
-        assert_that(res.json_body, 
-                    has_entry('Items', has_length(greater_than(1))))
+        class _global_recs(object):
+            def iter_objects(self):
+                obj = find_object_with_ntiid(context_ntiid)
+                if obj is not None:
+                    yield obj
+
+        utility = _global_recs()
+        gsm = component.getGlobalSiteManager()
+        gsm.registerUtility(utility, ICompletables, "bleach")
+        try:
+            # check index
+            with mock_dataserver.mock_db_trans(self.ds):
+                items = get_indexed_completed_items(user1_username)
+                assert_that(items, has_length(1))
+            
+            # rebuild index
+            rebuild_url = '/dataserver2/@@RebuildCompletedItemsCatalog'
+            res = self.testapp.post(rebuild_url)
+            assert_that(res.json_body, 
+                        has_entry('Total', greater_than(0)))
+        finally:
+            gsm.unregisterUtility(utility, ICompletables, "bleach")
 
         # Build data
         build_url = '/dataserver2/Objects/%s/%s/%s/@@%s' % (context_ntiid,
