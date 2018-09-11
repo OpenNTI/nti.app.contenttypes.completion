@@ -131,7 +131,7 @@ class _CompletionContextSettingsDecorator(AbstractAuthenticatedRequestAwareDecor
             link = Link(context,
                         rel=name,
                         elements=(COMPLETION_PATH_NAME,
-                                  '@@%s' % name,))
+                                  '%s' % name,))
             interface.alsoProvides(link, ILocation)
             link.__name__ = ''
             link.__parent__ = context
