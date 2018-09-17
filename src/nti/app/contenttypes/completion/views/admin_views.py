@@ -85,13 +85,18 @@ class RebuildCompletedItemsCatalogView(AbstractAuthenticatedView):
 class RemoveInvalidUserCompletedItemContainersView(AbstractAuthenticatedView):
             
     def __call__(self):
+        result = LocatedExternalDict()
+        result[ITEMS] = items = set()
         for context in get_completion_contexts():
             container = ICompletedItemContainer(context)
             # pylint: disable=too-many-function-args
             for username, user_container in list(container.items()): 
                 if User.get_user(username) is None:
+                    items.add(username)
                     user_container.clear()
-        return hexc.HTTPNoContent()
+        result[ITEMS] = sorted(items)
+        result[ITEM_COUNT] = result[TOTAL] = len(items)
+        return result
 
 
 @view_config(route_name='objects.generic.traversal',
