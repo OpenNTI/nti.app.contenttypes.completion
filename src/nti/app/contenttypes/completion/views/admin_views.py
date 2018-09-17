@@ -21,6 +21,7 @@ from zope.cachedescriptors.property import Lazy
 
 from nti.app.base.abstract_views import AbstractAuthenticatedView
 
+from nti.app.contenttypes.completion.catalog import get_completion_contexts
 from nti.app.contenttypes.completion.catalog import rebuild_completed_items_catalog
 
 from nti.app.contenttypes.completion.interfaces import ICompletedItemsContext
@@ -34,6 +35,7 @@ from nti.app.externalization.view_mixins import ModeledContentUploadRequestUtils
 
 from nti.common.string import is_true
 
+from nti.contenttypes.completion.interfaces import ICompletedItemContainer
 from nti.contenttypes.completion.interfaces import ICompletableItemProvider
 from nti.contenttypes.completion.interfaces import IPrincipalCompletedItemContainer
 
@@ -44,6 +46,8 @@ from nti.contenttypes.completion.utils import get_required_completable_items_for
 from nti.dataserver import authorization as nauth
 
 from nti.dataserver.interfaces import IDataserverFolder
+
+from nti.dataserver.users.users import User
 
 from nti.externalization.interfaces import LocatedExternalDict
 from nti.externalization.interfaces import StandardExternalFields
@@ -70,6 +74,24 @@ class RebuildCompletedItemsCatalogView(AbstractAuthenticatedView):
         result[ITEMS] = items
         result[ITEM_COUNT] = result[TOTAL] = len(seen)
         return result
+
+
+@view_config(context=IDataserverFolder)
+@view_defaults(route_name='objects.generic.traversal',
+               renderer='rest',
+               request_method='POST',
+               permission=nauth.ACT_NTI_ADMIN,
+               name='RemoveInvalidPrincipalCompletedItemContainers')
+class RemoveInvalidPrincipalCompletedItemContainersView(AbstractAuthenticatedView):
+            
+    def __call__(self):
+        for context in get_completion_contexts():
+            container = ICompletedItemContainer(context)
+            # pylint: disable=too-many-function-args
+            for username, user_container in list(container.items()): 
+                if User.get_user(username) is None:
+                    user_container.clear()
+        return hexc.HTTPNoContent()
 
 
 @view_config(route_name='objects.generic.traversal',

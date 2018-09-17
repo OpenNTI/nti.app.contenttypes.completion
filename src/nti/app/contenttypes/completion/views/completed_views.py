@@ -43,20 +43,22 @@ class UserCompletedItems(AbstractAuthenticatedView):
 
     @property
     def user(self):
+        # pylint: disable=no-member
         return self.context.user
 
     @property
     def completion_context(self):
+        # pylint: disable=no-member
         return self.context.completion_context
 
     @Lazy
     def providers(self):
         return tuple(component.subscribers((self.user, self.completion_context),
-                                            ICompletedItemProvider))
+                                           ICompletedItemProvider))
 
     def _get_last_mod(self):
         last_mod = None
-        for provider in self.providers:
+        for provider in self.providers:  # pylint: disable=not-an-iterable
             if provider.last_modified is not None:
                 if last_mod is not None:
                     last_mod = max(last_mod, provider.last_modified)
@@ -73,7 +75,7 @@ class UserCompletedItems(AbstractAuthenticatedView):
         results.__parent__ = self.context
 
         items = {}
-        for provider in self.providers:
+        for provider in self.providers:  # pylint: disable=not-an-iterable
             for completed_item in provider.completed_items():
                 items[completed_item.item_ntiid] = completed_item.CompletedDate
 
