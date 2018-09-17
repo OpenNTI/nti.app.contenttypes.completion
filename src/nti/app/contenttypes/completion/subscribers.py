@@ -24,17 +24,16 @@ from nti.contenttypes.completion.utils import get_indexed_completed_items
 
 from nti.coremetadata.interfaces import IUser
 
-from nti.dataserver.users.interfaces import IWillDeleteEntityEvent
-
 from nti.site.interfaces import IHostPolicyFolder
 
 logger = __import__('logging').getLogger(__name__)
 
 
-@component.adapter(IUser, IWillDeleteEntityEvent)
+@component.adapter(IUser, IObjectRemovedEvent)
 def _on_user_deleted(user, unused_event=None):
     """
-    When a user is deleted delete its completed items
+    When a user is deleted delete its completed items.
+    This should be done after all progress events have been fired.
     """
     logger.info("Removing completed items data for user %s", user)
     username = user.username
