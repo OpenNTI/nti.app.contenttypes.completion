@@ -81,8 +81,8 @@ class RebuildCompletedItemsCatalogView(AbstractAuthenticatedView):
                renderer='rest',
                request_method='POST',
                permission=nauth.ACT_NTI_ADMIN,
-               name='RemoveInvalidPrincipalCompletedItemContainers')
-class RemoveInvalidPrincipalCompletedItemContainersView(AbstractAuthenticatedView):
+               name='RemoveInvalidUserCompletedItemContainers')
+class RemoveInvalidUserCompletedItemContainersView(AbstractAuthenticatedView):
             
     def __call__(self):
         for context in get_completion_contexts():
