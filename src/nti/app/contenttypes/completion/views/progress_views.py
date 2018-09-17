@@ -57,6 +57,7 @@ class ProgressContextView(AbstractAuthenticatedView):
 
     @Lazy
     def completion_context_policy(self):
+        # pylint: disable=no-member
         return ICompletionContextCompletionPolicy(self.context.completion_context,
                                                   None)
 
@@ -67,7 +68,7 @@ class ProgressContextView(AbstractAuthenticatedView):
             raise hexc.HTTPNotFound()
 
         bucket_size = self.request.params.get('bucketSize', 5)
-
+        # pylint: disable=no-member
         cohort = ICompletionContextCohort(self.context.completion_context, ())
         total_students = 0
         accumulated_progress = 0
@@ -123,6 +124,7 @@ class ProgressContextView(AbstractAuthenticatedView):
     @view_config(permission=ACT_VIEW_PROGRESS,
                  context=ICompletionContextUserProgress)
     def user_progress(self):
+        # pylint: disable=no-member
         if self.context.user is None:
             raise hexc.HTTPNotFound()
         if self.completion_context_policy is None:
@@ -136,6 +138,7 @@ class ProgressContextView(AbstractAuthenticatedView):
                  context=ICompletionContextUserProgress,
                  name="details")
     def user_progress_details(self):
+        # pylint: disable=no-member
         if self.context.user is None:
             raise hexc.HTTPNotFound()
         if self.completion_context_policy is None:
@@ -155,6 +158,7 @@ class ProgressContextView(AbstractAuthenticatedView):
                                                             self.context.completion_context)
 
         completable = progress_factory.completable_items
+        # pylint: disable=not-an-iterable,unsubscriptable-object
         for key in completable:
             item = completable[key]
             item_progress = component.queryMultiAdapter((self.context.user,
@@ -187,6 +191,7 @@ class ProgressContextView(AbstractAuthenticatedView):
         This is probably really expensive.  Adapt the completion context
         to an IEntityEnumerable
         """
+        # pylint: disable=no-member
         if self.context.user is not None:
             raise hexc.HTTPNotFound()
         if self.completion_context_policy is None:
