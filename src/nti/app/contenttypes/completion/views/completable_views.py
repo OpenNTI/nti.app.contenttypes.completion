@@ -217,13 +217,14 @@ class CompletionDefaultUpdateView(AbstractRequiredUpdateView):
         # object is retrievable.
         return key
 
-    def _update_container(self, item):
+    def _update_container(self, item):  # pylint: disable=arguments-differ
+        # pylint: disable=too-many-function-args
         removed_optional = self.completable_container.remove_optional_item(item)
         removed_required = self.completable_container.remove_required_item(item)
         return removed_optional or removed_required
 
     def _get_keys(self):
-        # TODO: Ideally, we'll return all default keys
+        # Warning !!! Ideally, we'll return all default keys
         return self.completable_container.get_required_keys()
 
 
@@ -240,9 +241,10 @@ class CompletionRequiredUpdateView(AbstractRequiredUpdateView):
 
     LOG_MESSAGE = 'required'
 
-    def _update_container(self, item):
+    def _update_container(self, item):  # pylint: disable=arguments-differ
         # The interface will make sure this element only exists in either
         # required or optional.
+        # pylint: disable=too-many-function-args
         return self.completable_container.add_required_item(item)
 
     def _get_keys(self):
@@ -263,9 +265,10 @@ class CompletionNotRequiredUpdateView(AbstractRequiredUpdateView):
 
     LOG_MESSAGE = 'not required'
 
-    def _update_container(self, item):
+    def _update_container(self, item):  # pylint: disable=arguments-differ
         # The interface will make sure this element only exists in either
         # required or optional.
+        # pylint: disable=too-many-function-args
         return self.completable_container.add_optional_item(item)
 
     def _get_keys(self):
@@ -283,6 +286,7 @@ class CompletionRequiredDeleteView(AbstractCompletionRequiredView):
 
     def __call__(self):
         item_ntiid = self.item_ntiid
+        # pylint: disable=too-many-function-args
         self.completable_container.remove_required_item(item_ntiid)
         logger.info('Item no longer required for completion %s', item_ntiid)
         return hexc.HTTPNoContent()
@@ -299,9 +303,11 @@ class CompletionNotRequiredDeleteView(AbstractCompletionRequiredView):
 
     def __call__(self):
         item_ntiid = self.item_ntiid
+        # pylint: disable=too-many-function-args
         self.completable_container.remove_optional_item(item_ntiid)
         logger.info('Item no longer not-required for completion %s', item_ntiid)
         return hexc.HTTPNoContent()
+
 
 @view_config(route_name='objects.generic.traversal',
              renderer='rest',
@@ -329,7 +335,7 @@ class CompletableItemsView(AbstractCompletionRequiredView):
             if not has_permission(nauth.ACT_UPDATE, self.context, self.request):
                 raise hexc.HTTPForbidden()
 
-
+        # pylint: disable=no-member
         result = LocatedExternalDict()
         result.__parent__ = self.context.__parent__
         result.__name__ = self.context.__name__
