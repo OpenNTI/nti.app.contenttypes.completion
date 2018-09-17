@@ -20,8 +20,6 @@ from zope.traversing.interfaces import IPathAdapter
 
 from nti.app.base.abstract_views import AbstractAuthenticatedView
 
-from nti.app.contenttypes.completion.views import MessageFactory as _
-
 from nti.app.contenttypes.completion.views import COMPLETION_POLICY_VIEW_NAME
 from nti.app.contenttypes.completion.views import DEFAULT_REQUIRED_POLICY_PATH_NAME
 
@@ -65,6 +63,7 @@ class DefaultRequiredPolicyPutView(UGDPutView):
     """
 
     def _get_object_to_update(self):
+        # pylint: disable=no-member
         completion_context = self.context.completion_context
         return ICompletableItemDefaultRequiredPolicy(completion_context)
 
@@ -80,6 +79,7 @@ class DefaultRequiredPolicyView(AbstractAuthenticatedView):
     """
 
     def __call__(self):
+        # pylint: disable=no-member
         completion_context = self.context.completion_context
         return ICompletableItemDefaultRequiredPolicy(completion_context)
 
@@ -93,6 +93,7 @@ class AbstractCompletionContextPolicyView(AbstractAuthenticatedView):
 
     @property
     def completion_context(self):
+        # pylint: disable=no-member
         return self.context.context
 
     @property
