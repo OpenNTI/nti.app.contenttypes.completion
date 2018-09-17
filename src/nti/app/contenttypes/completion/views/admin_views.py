@@ -81,8 +81,8 @@ class RebuildCompletedItemsCatalogView(AbstractAuthenticatedView):
                renderer='rest',
                request_method='POST',
                permission=nauth.ACT_NTI_ADMIN,
-               name='RemoveInvalidUserCompletedItemContainers')
-class RemoveInvalidUserCompletedItemContainersView(AbstractAuthenticatedView):
+               name='RemoveGhostCompletedItemContainers')
+class RemoveGhostCompletedItemContainersView(AbstractAuthenticatedView):
             
     def __call__(self):
         result = LocatedExternalDict()
