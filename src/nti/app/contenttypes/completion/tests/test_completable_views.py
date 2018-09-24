@@ -210,7 +210,7 @@ class TestCompletableRequiredViews(ApplicationLayerTest):
         try:
             component.getSiteManager().registerAdapter(FixedCompletionContextAdapter,
                                                        (ITestPersistentCompletableItem,),
-                                                       ICompletionContext)
+                                                       ICompletionContext, name="CompletionContext")
             completable_url = '/dataserver2/Objects/%s' % item_ntiid1
             comp_res = self.testapp.get(completable_url).json_body
             assert_that(comp_res, has_entries('IsCompletionDefaultState', True,
@@ -236,5 +236,5 @@ class TestCompletableRequiredViews(ApplicationLayerTest):
                                               'CompletionDefaultState', False,
                                               'CompletionRequired', False))
         finally:
-            component.getGlobalSiteManager().unregisterAdapter(FixedCompletionContextAdapter)
+            component.getGlobalSiteManager().unregisterAdapter(FixedCompletionContextAdapter, name="CompletionContext")
 

@@ -153,7 +153,7 @@ class CompletableItemDecorator(AbstractAuthenticatedRequestAwareDecorator):
 
     @Lazy
     def completion_context(self):
-        return ICompletionContext(self.context, None)
+        return component.queryAdapter(self.context, ICompletionContext, name="CompletionContext")
 
     def has_completion_policy(self):
         completion_policy = ICompletionContextCompletionPolicy(self.completion_context,
