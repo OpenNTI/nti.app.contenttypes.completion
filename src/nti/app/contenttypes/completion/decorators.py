@@ -152,20 +152,25 @@ class CompletableItemDecorator(AbstractAuthenticatedRequestAwareDecorator):
         super(CompletableItemDecorator, self).__init__(context, request)
         self.context = context
 
-    @Lazy
-    def completion_context(self):
-        provider = ICompletionContextProvider(self.context, None)
+    def get_completion_context(self, item):
+        """
+        We shouldn't use the self.context for getting the provider,
+        because there is a derived decorator AssetCompletableItemDecorator,
+        in which self.context is not a ICompletableItem
+        """
+        provider =  ICompletionContextProvider(item, None)
         return provider() if provider else None
 
-    def has_completion_policy(self):
-        completion_policy = ICompletionContextCompletionPolicy(self.completion_context,
+    def has_completion_policy(self, completion_context):
+        completion_policy = ICompletionContextCompletionPolicy(completion_context,
                                                                None)
         return completion_policy is not None
 
     def _do_decorate_external(self, context, result):
-        if self.has_completion_policy():
-            required_container = ICompletableItemContainer(self.completion_context)
-            default_policy = ICompletableItemDefaultRequiredPolicy(self.completion_context)
+        completion_context = self.get_completion_context(context)
+        if self.has_completion_policy(completion_context):
+            required_container = ICompletableItemContainer(completion_context)
+            default_policy = ICompletableItemDefaultRequiredPolicy(completion_context)
             is_required = required_container.is_item_required(context)
             is_not_required = required_container.is_item_optional(context)
             # We're default if we are not explicitly required/not-required
@@ -178,10 +183,10 @@ class CompletableItemDecorator(AbstractAuthenticatedRequestAwareDecorator):
             result['CompletionDefaultState'] = default_required_state
             result['IsCompletionDefaultState'] = is_default_state
 
-        if self.completion_context is not None:
+        if completion_context is not None:
             if has_permission(ACT_VIEW_PROGRESS, self.request.context, self.request):
                 completed_item = get_completed_item(IUser(self.request.context, self.remoteUser),
-                                                    self.completion_context,
+                                                    completion_context,
                                                     context)
                 result['CompletedItem'] = completed_item
                 result['CompletedDate'] = getattr(completed_item, 'CompletedDate', None)
