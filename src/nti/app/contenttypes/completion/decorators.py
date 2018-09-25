@@ -37,6 +37,8 @@ from nti.contenttypes.completion.interfaces import ICompletableItemDefaultRequir
 
 from nti.contenttypes.completion.utils import get_completed_item
 
+from nti.contenttypes.courses.interfaces import ICourseSubInstance
+
 from nti.dataserver.authorization import ACT_CONTENT_EDIT
 
 from nti.dataserver.authorization import is_admin_or_content_admin_or_site_admin
@@ -113,6 +115,17 @@ class _CompletionContextSettingsDecorator(AbstractAuthenticatedRequestAwareDecor
            and completion_policy is not None \
            and _check_access(context, self.remoteUser, self.request)
 
+    def _make_default_required_link(self, context, rel, method):
+        link = Link(context,
+                    rel=rel,
+                    elements=(COMPLETION_PATH_NAME,
+                              '%s' % DEFAULT_REQUIRED_POLICY_PATH_NAME,),
+                    method=method)
+        interface.alsoProvides(link, ILocation)
+        link.__name__ = ''
+        link.__parent__ = context
+        return link
+
     def _do_decorate_external(self, context, result):
         context = find_interface(context, ICompletionContext)
         _links = result.setdefault(LINKS, [])
@@ -128,15 +141,10 @@ class _CompletionContextSettingsDecorator(AbstractAuthenticatedRequestAwareDecor
             link.__parent__ = context
             _links.append(link)
 
-        for name in (DEFAULT_REQUIRED_POLICY_PATH_NAME,):
-            link = Link(context,
-                        rel=name,
-                        elements=(COMPLETION_PATH_NAME,
-                                  '%s' % name,))
-            interface.alsoProvides(link, ILocation)
-            link.__name__ = ''
-            link.__parent__ = context
-            _links.append(link)
+        _links.append(self._make_default_required_link(context, 'GetDefaultRequiredPolicy', 'GET'))
+
+        if not ICourseSubInstance.providedBy(context):
+            _links.append(self._make_default_required_link(context, 'UpdateDefaultRequiredPolicy', 'PUT'))
 
 
 @component.adapter(ICompletableItem)

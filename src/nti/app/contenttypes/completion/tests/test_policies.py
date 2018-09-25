@@ -202,7 +202,9 @@ class TestCompletionPolicyViews(ApplicationLayerTest):
         self._set_context_policy(context_ntiid)
         policy_res = self._get_completion_policy(context_ntiid).json_body
         self.require_link_href_with_rel(policy_res,
-                                        DEFAULT_REQUIRED_POLICY_PATH_NAME)
+                                        'GetDefaultRequiredPolicy')
+        self.require_link_href_with_rel(policy_res,
+                                        'UpdateDefaultRequiredPolicy')
 
         url = '/dataserver2/Objects/%s/%s/%s' % (context_ntiid,
                                                  COMPLETION_PATH_NAME,
