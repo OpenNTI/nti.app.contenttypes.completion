@@ -38,7 +38,7 @@ from nti.app.testing.application_webtest import ApplicationLayerTest
 from nti.app.testing.decorators import WithSharedApplicationMockDS
 
 from nti.contenttypes.completion.interfaces import IProgress
-from nti.contenttypes.completion.interfaces import ICompletionContext
+from nti.contenttypes.completion.interfaces import ICompletionContextProvider
 
 from nti.contenttypes.completion.policies import CompletableItemAggregateCompletionPolicy
 
@@ -203,14 +203,17 @@ class TestCompletableRequiredViews(ApplicationLayerTest):
 
         # Get completable, validation required state
         @component.adapter(ITestPersistentCompletableItem)
-        @interface.implementer(ICompletionContext)
-        def FixedCompletionContextAdapter(unused_item):
-            return find_object_with_ntiid(context_ntiid)
+        @interface.implementer(ICompletionContextProvider)
+        class FixedCompletionContextAdapter(object):
+            def __init__(self, unused_item):
+                self.item = unused_item
+            def __call__(self):
+                return find_object_with_ntiid(context_ntiid)
 
         try:
             component.getSiteManager().registerAdapter(FixedCompletionContextAdapter,
                                                        (ITestPersistentCompletableItem,),
-                                                       ICompletionContext, name="CompletionContext")
+                                                       ICompletionContextProvider)
             completable_url = '/dataserver2/Objects/%s' % item_ntiid1
             comp_res = self.testapp.get(completable_url).json_body
             assert_that(comp_res, has_entries('IsCompletionDefaultState', True,
@@ -236,5 +239,5 @@ class TestCompletableRequiredViews(ApplicationLayerTest):
                                               'CompletionDefaultState', False,
                                               'CompletionRequired', False))
         finally:
-            component.getGlobalSiteManager().unregisterAdapter(FixedCompletionContextAdapter, name="CompletionContext")
+            component.getGlobalSiteManager().unregisterAdapter(FixedCompletionContextAdapter)
 

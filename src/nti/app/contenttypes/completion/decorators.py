@@ -30,6 +30,7 @@ from nti.contenttypes.completion.authorization import ACT_VIEW_PROGRESS
 
 from nti.contenttypes.completion.interfaces import ICompletableItem
 from nti.contenttypes.completion.interfaces import ICompletionContext
+from nti.contenttypes.completion.interfaces import ICompletionContextProvider
 from nti.contenttypes.completion.interfaces import ICompletableItemContainer
 from nti.contenttypes.completion.interfaces import ICompletionContextCompletionPolicy
 from nti.contenttypes.completion.interfaces import ICompletableItemDefaultRequiredPolicy
@@ -153,7 +154,8 @@ class CompletableItemDecorator(AbstractAuthenticatedRequestAwareDecorator):
 
     @Lazy
     def completion_context(self):
-        return component.queryAdapter(self.context, ICompletionContext, name="CompletionContext")
+        provider = ICompletionContextProvider(self.context, None)
+        return provider() if provider else None
 
     def has_completion_policy(self):
         completion_policy = ICompletionContextCompletionPolicy(self.completion_context,
