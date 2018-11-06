@@ -32,6 +32,7 @@ from nti.contenttypes.completion.interfaces import ICompletableItem
 from nti.contenttypes.completion.interfaces import ICompletionContext
 from nti.contenttypes.completion.interfaces import ICompletionContextProvider
 from nti.contenttypes.completion.interfaces import ICompletableItemContainer
+from nti.contenttypes.completion.interfaces import ICompletableItemCompletionPolicy
 from nti.contenttypes.completion.interfaces import ICompletionContextCompletionPolicy
 from nti.contenttypes.completion.interfaces import ICompletableItemDefaultRequiredPolicy
 
@@ -198,3 +199,17 @@ class CompletableItemDecorator(AbstractAuthenticatedRequestAwareDecorator):
                                                     context)
                 result['CompletedItem'] = completed_item
                 result['CompletedDate'] = getattr(completed_item, 'CompletedDate', None)
+
+
+@component.adapter(ICompletableItem)
+@interface.implementer(IExternalMappingDecorator)
+class _CompletableItemCompletionPolicyDecorator(AbstractAuthenticatedRequestAwareDecorator):
+
+    def _completion_context(self, item):
+        provider =  ICompletionContextProvider(item, None)
+        return provider() if provider else None
+
+    def _do_decorate_external(self, context, result):
+        if not ICompletionContext.providedBy(context):
+            result['CompletionPolicy'] = component.queryMultiAdapter((context, self._completion_context(context)),
+                                                                     ICompletableItemCompletionPolicy)
