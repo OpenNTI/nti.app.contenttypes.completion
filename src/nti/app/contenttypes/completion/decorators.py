@@ -22,6 +22,7 @@ from nti.app.contenttypes.completion import COMPLETION_REQUIRED_VIEW_NAME
 from nti.app.contenttypes.completion import COMPLETION_NOT_REQUIRED_VIEW_NAME
 from nti.app.contenttypes.completion import DEFAULT_REQUIRED_POLICY_PATH_NAME
 
+from nti.app.renderers.decorators import AbstractRequestAwareDecorator
 from nti.app.renderers.decorators import AbstractAuthenticatedRequestAwareDecorator
 
 from nti.appserver.pyramid_authorization import has_permission
@@ -203,7 +204,7 @@ class CompletableItemDecorator(AbstractAuthenticatedRequestAwareDecorator):
 
 @component.adapter(ICompletableItem)
 @interface.implementer(IExternalMappingDecorator)
-class _CompletableItemCompletionPolicyDecorator(AbstractAuthenticatedRequestAwareDecorator):
+class _CompletableItemCompletionPolicyDecorator(AbstractRequestAwareDecorator):
 
     def _completion_context(self, item):
         provider =  ICompletionContextProvider(item, None)
