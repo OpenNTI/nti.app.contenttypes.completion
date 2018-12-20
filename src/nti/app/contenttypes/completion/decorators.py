@@ -194,8 +194,14 @@ class CompletableItemDecorator(AbstractAuthenticatedRequestAwareDecorator):
             result['IsCompletionDefaultState'] = is_default_state
 
         if completion_context is not None:
-            if has_permission(ACT_VIEW_PROGRESS, self.request.context, self.request):
-                completed_item = get_completed_item(IUser(self.request.context, self.remoteUser),
+            # See if we have a user from our request context
+            # If so, and it is not ourselves, that means we are another user
+            # viewing a user's progress; that user *must* have the ACT_VIEW_PROGRESS
+            # permission then.
+            user = IUser(self.request.context, self.remoteUser)
+            if     user == self.remoteUser \
+                or has_permission(ACT_VIEW_PROGRESS, self.request.context, self.request):
+                completed_item = get_completed_item(user,
                                                     completion_context,
                                                     context)
                 result['CompletedItem'] = completed_item
