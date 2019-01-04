@@ -80,7 +80,8 @@ class CompletionContextMixin(object):
 
     @Lazy
     def __acl__(self):
-        provider = component.queryMultiAdapter((self.completion_context, self), ICompletionContextACLProvider)
+        provider = component.queryMultiAdapter((self.completion_context, self),
+                                               ICompletionContextACLProvider)
         if provider is None:
             # For tests
             aces = [ace_allowing(ROLE_ADMIN, ALL_PERMISSIONS, type(self)),
@@ -118,6 +119,7 @@ class UserTraversableMixin(object):
             return self.user
         return None
 
+
 @interface.implementer(IPathAdapter)
 class CompletionPathAdapter(Contained):
 
@@ -127,6 +129,7 @@ class CompletionPathAdapter(Contained):
         self.context = context
         self.request = request
         self.__parent__ = context
+
 
 @interface.implementer(IPathAdapter)
 @interface.implementer(ITraversable)
