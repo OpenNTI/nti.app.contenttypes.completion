@@ -124,6 +124,7 @@ class CompletionContextProgressFactory(object):
             # pylint: disable=no-member
             return max(x.CompletedDate for x in self.user_required_completed_items.values())
 
+
     def __call__(self):
         ntiid = getattr(self.context, 'ntiid', '') \
              or to_external_ntiid_oid(self.context)
@@ -131,6 +132,13 @@ class CompletionContextProgressFactory(object):
         completed_count = len(self.user_required_completed_items)
         max_possible = len(self.completable_items)
         has_progress = bool(completed_count)
+
+        failed_ntiids = set()
+        # XXX: We would need item progress to gather this.
+        incomplete_ntiids = set()
+        for completed_item in self.user_required_completed_items.values():
+            if not completed_item.Success:
+                failed_ntiids.add(completed_item.ItemNTIID)
         # We probably always want to return this progress, even if there is
         # none.
         progress = CompletionContextProgress(NTIID=ntiid,
@@ -140,7 +148,9 @@ class CompletionContextProgressFactory(object):
                                              Item=self.context,
                                              User=self.user,
                                              CompletionContext=self.context,
-                                             HasProgress=has_progress)
+                                             HasProgress=has_progress,
+                                             UnsuccessfulItemNTIIDs=failed_ntiids,
+                                             IncompleteItemNTIIDs=incomplete_ntiids)
 
         policy = ICompletionContextCompletionPolicy(self.context, None)
         if policy is not None:
