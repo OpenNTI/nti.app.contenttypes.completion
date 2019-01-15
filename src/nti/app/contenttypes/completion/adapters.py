@@ -23,6 +23,7 @@ from nti.contenttypes.completion.interfaces import ICompletedItem
 from nti.contenttypes.completion.interfaces import ICompletionContext
 from nti.contenttypes.completion.interfaces import IContextNTIIDAdapter
 from nti.contenttypes.completion.interfaces import ICompletedItemProvider
+from nti.contenttypes.completion.interfaces import ICompletionContextCompletedItem
 from nti.contenttypes.completion.interfaces import IRequiredCompletableItemProvider
 from nti.contenttypes.completion.interfaces import IPrincipalCompletedItemContainer
 from nti.contenttypes.completion.interfaces import ICompletionContextCompletionPolicy
@@ -155,6 +156,9 @@ class CompletionContextProgressFactory(object):
         policy = ICompletionContextCompletionPolicy(self.context, None)
         if policy is not None:
             completed_item = policy.is_complete(progress)
+            if completed_item is not None:
+                interface.alsoProvides(completed_item, ICompletionContextCompletedItem)
+                completed_item.__parent__ = progress
             progress.CompletedItem = completed_item
         return progress
 

@@ -41,12 +41,12 @@ from nti.app.contenttypes.completion import DEFAULT_REQUIRED_POLICY_PATH_NAME
 
 from nti.app.contenttypes.completion.interfaces import ICompletedItemsContext
 from nti.app.contenttypes.completion.interfaces import ICompletionContextACLProvider
-from nti.app.contenttypes.completion.interfaces import ICompletionContextProgress
 from nti.app.contenttypes.completion.interfaces import ICompletionContextUserProgress
 
 from nti.app.externalization.error import raise_json_error
 
 from nti.contenttypes.completion.interfaces import ICompletionContext
+from nti.contenttypes.completion.interfaces import ICompletionContextProgress
 
 from nti.dataserver.authorization import ROLE_ADMIN
 

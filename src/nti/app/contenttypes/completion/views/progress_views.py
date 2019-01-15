@@ -26,13 +26,13 @@ from nti.app.base.abstract_views import AbstractAuthenticatedView
 from nti.app.contenttypes.completion.adapters import CompletionContextProgressFactory
 
 from nti.app.contenttypes.completion.interfaces import ICompletionContextCohort
-from nti.app.contenttypes.completion.interfaces import ICompletionContextProgress
 from nti.app.contenttypes.completion.interfaces import ICompletionContextUserProgress
 
 from nti.contenttypes.completion.authorization import ACT_LIST_PROGRESS
 from nti.contenttypes.completion.authorization import ACT_VIEW_PROGRESS
 
 from nti.contenttypes.completion.interfaces import IProgress
+from nti.contenttypes.completion.interfaces import ICompletionContextProgress
 from nti.contenttypes.completion.interfaces import ICompletionContextCompletionPolicy
 from nti.contenttypes.completion.interfaces import ICompletableItemCompletionPolicy
 

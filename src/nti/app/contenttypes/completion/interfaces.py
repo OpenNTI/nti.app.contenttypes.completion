@@ -35,13 +35,6 @@ class ICompletedItemsContext(ICompletionContextContained):
                   required=False)
 
 
-class ICompletionContextProgress(ICompletionContextContained):
-    """
-    Something that represents all the progress in a completion
-    context.
-    """
-
-
 class ICompletionContextUserProgress(ICompletionContextContained):
     """
     A representation of a particular users progress
