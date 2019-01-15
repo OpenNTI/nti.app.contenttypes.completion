@@ -43,7 +43,7 @@ from nti.contenttypes.courses.interfaces import ICourseSubInstance
 
 from nti.dataserver.authorization import ACT_CONTENT_EDIT
 
-from nti.dataserver.authorization import is_admin_or_content_admin_or_site_admin
+from nti.dataserver.authorization import is_admin_or_content_admin
 
 from nti.dataserver.interfaces import IUser
 
@@ -62,7 +62,7 @@ logger = __import__('logging').getLogger(__name__)
 
 
 def _check_access(context, user, request):
-    return     is_admin_or_content_admin_or_site_admin(user) \
+    return     is_admin_or_content_admin(user) \
             or has_permission(ACT_CONTENT_EDIT, context, request)
 
 
