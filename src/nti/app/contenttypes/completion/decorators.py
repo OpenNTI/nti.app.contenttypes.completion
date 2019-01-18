@@ -106,7 +106,7 @@ class _CompletionContextAdminDecorator(AbstractAuthenticatedRequestAwareDecorato
         _links.append(self._make_completion_policy_link(context, COMPLETION_POLICY_VIEW_NAME, 'GET'))
 
         config = component.getUtility(ICompletionContextCompletionPolicyConfigurationUtility)
-        if config.is_editting_completion_policy_open(context):
+        if config.can_edit_completion_policy(context):
             _links.append(self._make_completion_policy_link(context, 'UpdateCompletionPolicy', 'PUT'))
             _links.append(self._make_completion_policy_link(context, 'ResetCompletionPolicy', 'DELETE'))
 
