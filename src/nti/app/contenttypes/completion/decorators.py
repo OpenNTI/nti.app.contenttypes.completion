@@ -36,6 +36,7 @@ from nti.contenttypes.completion.interfaces import ICompletableItemContainer
 from nti.contenttypes.completion.interfaces import ICompletableItemCompletionPolicy
 from nti.contenttypes.completion.interfaces import ICompletionContextCompletionPolicy
 from nti.contenttypes.completion.interfaces import ICompletableItemDefaultRequiredPolicy
+from nti.contenttypes.completion.interfaces import ICompletionContextCompletionPolicyConfigurationUtility
 
 from nti.contenttypes.completion.utils import get_completed_item
 
@@ -89,16 +90,25 @@ class _CompletionContextAdminDecorator(AbstractAuthenticatedRequestAwareDecorato
         return self._is_authenticated \
            and _check_access(context, self.remoteUser, self.request)
 
-    def _do_decorate_external(self, context, result):
-        _links = result.setdefault(LINKS, [])
+    def _make_completion_policy_link(self, context, rel, method):
         link = Link(context,
-                    rel=COMPLETION_POLICY_VIEW_NAME,
+                    rel=rel,
                     elements=(COMPLETION_PATH_NAME,
-                              '@@%s' % COMPLETION_POLICY_VIEW_NAME,))
+                              '@@%s' % COMPLETION_POLICY_VIEW_NAME,),
+                    method=method)
         interface.alsoProvides(link, ILocation)
         link.__name__ = ''
         link.__parent__ = context
-        _links.append(link)
+        return link
+
+    def _do_decorate_external(self, context, result):
+        _links = result.setdefault(LINKS, [])
+        _links.append(self._make_completion_policy_link(context, COMPLETION_POLICY_VIEW_NAME, 'GET'))
+
+        config = component.getUtility(ICompletionContextCompletionPolicyConfigurationUtility)
+        if config.can_edit_completion_policy(context):
+            _links.append(self._make_completion_policy_link(context, 'UpdateCompletionPolicy', 'PUT'))
+            _links.append(self._make_completion_policy_link(context, 'ResetCompletionPolicy', 'DELETE'))
 
 
 @component.adapter(ICompletionContextCompletionPolicy)

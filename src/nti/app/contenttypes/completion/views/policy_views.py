@@ -143,9 +143,7 @@ class CompletionContextPolicyUpdateView(AbstractCompletionContextPolicyView,
         new_policy = self.readCreateUpdateContentObject(self.remoteUser)
         item_ntiid = self.item_ntiid
         if not item_ntiid:
-            self.completion_container.context_policy = new_policy
-            interface.alsoProvides(new_policy, ICompletionContextCompletionPolicy)
-            new_policy.__parent__ = self.completion_container
+            self.completion_container.set_context_policy(new_policy)
         else:
             logger.info('Added completable policy for %s', item_ntiid)
             self.completion_container[item_ntiid] = new_policy
@@ -179,7 +177,7 @@ class CompletionPolicyDeleteView(AbstractCompletionContextPolicyView):
         item_ntiid = self.item_ntiid
         if     not item_ntiid \
             or item_ntiid == getattr(self.completion_context, 'ntiid', ''):
-            self.completion_container.context_policy = None
+            self.completion_container.set_context_policy(None)
         else:
             try:
                 del self.completion_container[item_ntiid]
