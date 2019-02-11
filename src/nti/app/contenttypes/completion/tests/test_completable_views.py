@@ -48,7 +48,7 @@ from nti.dataserver.tests import mock_dataserver
 
 from nti.dataserver.users import User
 
-from nti.externalization.externalization import StandardExternalFields
+from nti.externalization.interfaces import StandardExternalFields
 
 from nti.ntiids.ntiids import find_object_with_ntiid
 
