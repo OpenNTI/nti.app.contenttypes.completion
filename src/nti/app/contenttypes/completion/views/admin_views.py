@@ -83,14 +83,14 @@ class RebuildCompletedItemsCatalogView(AbstractAuthenticatedView):
                permission=nauth.ACT_NTI_ADMIN,
                name='RemoveGhostCompletedItemContainers')
 class RemoveGhostCompletedItemContainersView(AbstractAuthenticatedView):
-            
+
     def __call__(self):
         result = LocatedExternalDict()
         result[ITEMS] = items = set()
         for context in get_completion_contexts():
             container = ICompletedItemContainer(context)
             # pylint: disable=too-many-function-args
-            for username, user_container in list(container.items()): 
+            for username, user_container in list(container.items()):
                 if User.get_user(username) is None:
                     items.add(username)
                     user_container.clear()
@@ -134,7 +134,7 @@ class ResetCompletionDataView(AbstractAuthenticatedView,
         return result
 
     def do_reset_completed(self):
-        # pylint: disable=no-member,not-an-iterable 
+        # pylint: disable=no-member,not-an-iterable
         logger.info('Clearing user completed item containers')
         for user in self.users:
             user_container = component.getMultiAdapter((user, self.context.completion_context),
@@ -181,7 +181,7 @@ class BuildCompletionDataView(ResetCompletionDataView):
         item_count = 0
         user_count = 0
         logger.info('Building completion data')
-        # pylint: disable=no-member,not-an-iterable 
+        # pylint: disable=no-member,not-an-iterable
         for user in self.users:
             user_count += 1
             # Attempt to re-use providers, which may have internal caching

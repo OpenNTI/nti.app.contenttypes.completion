@@ -125,7 +125,6 @@ class CompletionContextProgressFactory(object):
             # pylint: disable=no-member
             return max(x.CompletedDate for x in self.user_required_completed_items.values())
 
-
     def __call__(self):
         ntiid = getattr(self.context, 'ntiid', '') \
              or to_external_ntiid_oid(self.context)

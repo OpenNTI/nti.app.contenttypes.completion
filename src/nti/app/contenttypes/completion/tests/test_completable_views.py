@@ -148,7 +148,8 @@ class TestCompletableRequiredViews(ApplicationLayerTest):
 
         # Bad data
         self.testapp.put_json(required_url, {u'ntiid': None}, status=422)
-        self.testapp.put_json(required_url, {u'ntiid': '%sdne' % item_ntiid1}, status=422)
+        self.testapp.put_json(required_url, {u'ntiid': 'tag:nextthought.com,2011-10:dne' % item_ntiid1},
+                              status=422)
 
         # Update
         res = self.testapp.put_json(required_url, {u'ntiid': item_ntiid1})
