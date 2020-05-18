@@ -37,6 +37,9 @@ def _on_user_deleted(user, unused_event=None):
     """
     logger.info("Removing completed items data for user %s", user)
     username = user.username
+    # FIXME: Why do we query this potentially large set?
+    # Let's do so based on enrollment if we can. That might be a subscriber
+    # order issue (use enrollment deletion if necessary).
     items = get_indexed_completed_items((username,))
     # get completed item containers
     contexts = {ICompletionContext(x, None) for x in items}
