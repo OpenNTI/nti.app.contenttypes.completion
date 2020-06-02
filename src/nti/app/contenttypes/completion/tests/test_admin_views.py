@@ -129,11 +129,11 @@ class TestAdminViews(ApplicationLayerTest):
         with mock_dataserver.mock_db_trans(self.ds):
             items = get_indexed_completed_items(user1_username)
             assert_that(items, has_length(1))
-        
+
         # rebuild index
         rebuild_url = '/dataserver2/@@RebuildCompletedItemsCatalog'
         res = self.testapp.post(rebuild_url)
-        assert_that(res.json_body, 
+        assert_that(res.json_body,
                     has_entry('Items', has_length(greater_than(1))))
 
         # Build data
@@ -233,7 +233,7 @@ class TestAdminViews(ApplicationLayerTest):
                                             Item=item1,
                                             CompletedDate=now)
             user_container.add_completed_item(completed_item1)
-            
+
             context = ICompletionContext(completed_item1, None)
             assert_that(context, is_(not_none()))
 
@@ -275,7 +275,7 @@ class TestAdminViews(ApplicationLayerTest):
                                             Item=item1,
                                             CompletedDate=now)
             user_container.add_completed_item(completed_item1)
-            
+
         with mock_dataserver.mock_db_trans(self.ds):
             items = get_indexed_completed_items(user1_username)
             assert_that(items, has_length(1))
