@@ -134,8 +134,7 @@ class CompletionContextProgressFactory(object):
         has_progress = bool(completed_count)
 
         failed_ntiids = set()
-        # XXX: We would need item progress to gather this.
-        incomplete_ntiids = set()
+        incomplete_ntiids = set(self.completable_items) - set(self.user_required_completed_items)
         for completed_item in self.user_required_completed_items.values():
             if not completed_item.Success:
                 failed_ntiids.add(completed_item.ItemNTIID)
