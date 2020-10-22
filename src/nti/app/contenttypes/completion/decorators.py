@@ -31,6 +31,7 @@ from nti.contenttypes.completion.authorization import ACT_VIEW_PROGRESS
 
 from nti.contenttypes.completion.interfaces import ICompletableItem
 from nti.contenttypes.completion.interfaces import ICompletionContext
+from nti.contenttypes.completion.interfaces import ICompletionSubContext
 from nti.contenttypes.completion.interfaces import ICompletionContextProvider
 from nti.contenttypes.completion.interfaces import ICompletableItemContainer
 from nti.contenttypes.completion.interfaces import ICompletableItemCompletionPolicy
@@ -39,8 +40,6 @@ from nti.contenttypes.completion.interfaces import ICompletableItemDefaultRequir
 from nti.contenttypes.completion.interfaces import ICompletionContextCompletionPolicyConfigurationUtility
 
 from nti.contenttypes.completion.utils import get_completed_item
-
-from nti.contenttypes.courses.interfaces import ICourseSubInstance
 
 from nti.dataserver.authorization import ACT_CONTENT_EDIT
 
@@ -155,7 +154,8 @@ class _CompletionContextSettingsDecorator(AbstractAuthenticatedRequestAwareDecor
 
         _links.append(self._make_default_required_link(context, 'GetDefaultRequiredPolicy', 'GET'))
 
-        if not ICourseSubInstance.providedBy(context):
+        # TODO: Why is this not an edit link on the required policy?
+        if not ICompletionSubContext.providedBy(context):
             _links.append(self._make_default_required_link(context, 'UpdateDefaultRequiredPolicy', 'PUT'))
 
 
