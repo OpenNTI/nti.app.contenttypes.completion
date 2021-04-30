@@ -16,7 +16,8 @@ from zope.component.hooks import setHooks
 
 from zope.intid.interfaces import IIntIds
 
-from nti.contenttypes.completion.index import IX_COMPLETIONTIME
+from zope.location.location import locate
+
 from nti.contenttypes.completion.index import IX_COMPLETION_BY_DAY
 
 from nti.contenttypes.completion.index import CompletionByDayIndex
@@ -61,17 +62,12 @@ def do_evolve(context):
         lsm = ds_folder.getSiteManager()
         intids = lsm.getUtility(IIntIds)
         catalog = get_completed_item_catalog()
-        if IX_COMPLETION_BY_DAY not in catalog:
-            catalog[IX_COMPLETION_BY_DAY] = CompletionByDayIndex()
-        by_day_idx = catalog[IX_COMPLETION_BY_DAY]
-        by_time_idx = catalog[IX_COMPLETIONTIME]
 
-        for doc_id in by_time_idx.ids():
-            obj = intids.queryObject(doc_id)
-            if obj is None:
-                logger.info("Missing/broken object (%s)", doc_id)
-                continue
-            by_day_idx.index_doc(doc_id, obj)
+        if IX_COMPLETION_BY_DAY not in catalog:
+            new_idx = CompletionByDayIndex()
+            intids.register(new_idx)
+            locate(new_idx, catalog, IX_COMPLETION_BY_DAY)
+            catalog[IX_COMPLETION_BY_DAY] = CompletionByDayIndex()
 
     component.getGlobalSiteManager().unregisterUtility(mock_ds, IDataserver)
     logger.info('Contenttype completion evolution %s done',
