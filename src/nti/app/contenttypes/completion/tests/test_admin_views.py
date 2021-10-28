@@ -14,25 +14,37 @@ from hamcrest import has_entry
 from hamcrest import has_length
 from hamcrest import assert_that
 
+import fudge
+
 from datetime import datetime
 
 from zope import interface
 from zope import component
+
+from zope.component.hooks import getSite
+
+from zope.securitypolicy.interfaces import IPrincipalRoleManager
 
 from nti.app.contenttypes.completion import COMPLETION_PATH_NAME
 from nti.app.contenttypes.completion import BUILD_COMPLETION_VIEW
 from nti.app.contenttypes.completion import RESET_COMPLETION_VIEW
 from nti.app.contenttypes.completion import USER_DATA_COMPLETION_VIEW
 from nti.app.contenttypes.completion import COMPLETED_ITEMS_PATH_NAME
+from nti.app.contenttypes.completion import AWARDED_COMPLETED_ITEMS_PATH_NAME
 
 from nti.app.contenttypes.completion.tests import CompletionTestLayer
+from nti.app.products.courseware.tests import PersistentInstructedCourseApplicationTestLayer
 
 from nti.app.contenttypes.completion.tests.models import PersistentCompletableItem
 from nti.app.contenttypes.completion.tests.models import PersistentCompletionContext
 
+from nti.app.products.courseware_admin import VIEW_COURSE_ROLES
+
 from nti.app.testing.application_webtest import ApplicationLayerTest
 
 from nti.app.testing.decorators import WithSharedApplicationMockDS
+
+from nti.app.users.utils import set_user_creation_site
 
 from nti.contenttypes.completion.completion import CompletedItem
 
@@ -41,7 +53,14 @@ from nti.contenttypes.completion.interfaces import IPrincipalCompletedItemContai
 
 from nti.contenttypes.completion.utils import get_indexed_completed_items
 
+from nti.contenttypes.courses.interfaces import ICourseInstance
+
 from nti.coremetadata.interfaces import IContained
+
+from nti.contenttypes.courses.interfaces import ICourseEnrollmentManager
+
+from nti.dataserver.authorization import ROLE_SITE_ADMIN
+from nti.dataserver.authorization import ROLE_CONTENT_EDITOR
 
 from nti.dataserver.tests import mock_dataserver
 
@@ -49,6 +68,7 @@ from nti.dataserver.users.users import User
 
 from nti.externalization.interfaces import StandardExternalFields
 
+from nti.ntiids.ntiids import find_object_with_ntiid
 from nti.ntiids.oids import to_external_ntiid_oid
 from hamcrest.library.number.ordering_comparison import greater_than
 
@@ -248,6 +268,7 @@ class TestAdminViews(ApplicationLayerTest):
         self.testapp.post_json(reset_url)
         res = self.testapp.get(user1_stats_url).json_body
         assert_that(res['CompletedItems'], has_length(0))
+    
 
     @WithSharedApplicationMockDS(users=True, testapp=True, default_authenticate=True)
     def test_user_deletion(self):
@@ -284,3 +305,74 @@ class TestAdminViews(ApplicationLayerTest):
             User.delete_entity(user1_username)
             items = get_indexed_completed_items(user1_username)
             assert_that(items, has_length(0))
+
+class TestAdminAwardViews(ApplicationLayerTest):
+    
+    layer = PersistentInstructedCourseApplicationTestLayer
+    
+    default_origin = 'http://platform.ou.edu'
+    
+    course_ntiid = u'tag:nextthought.com,2011-10:NTI-CourseInfo-Fall2015_CS_1323'
+    
+    @WithSharedApplicationMockDS(testapp=True, users=True)
+    @fudge.patch('nti.contenttypes.completion.policies.CompletableItemAggregateCompletionPolicy.is_complete')
+    def test_awarded_completed_items(self, mock_is_complete):
+        
+        awarded_user_username = u'awarded_user'
+        
+        test_site_admin_username = u'I.Am.Groot'
+        
+        course_admin_username = u'peter.quill'
+        
+        # Setup
+        with mock_dataserver.mock_db_trans(self.ds):
+            awarded_user = self._create_user(awarded_user_username)
+            course_admin = self._create_user(course_admin_username)
+            set_user_creation_site(awarded_user, 'platform.ou.edu')
+            set_user_creation_site(course_admin, 'platform.ou.edu')
+        
+        with mock_dataserver.mock_db_trans(self.ds, site_name='platform.ou.edu'):
+            entry = find_object_with_ntiid(self.course_ntiid)
+            course = entry.__parent__
+            user = User.get_user(awarded_user_username)
+            enrollment_manager = ICourseEnrollmentManager(course)
+            enrollment_manager.enroll(user)
+            
+        with mock_dataserver.mock_db_trans(self.ds, site_name='platform.ou.edu'):
+            
+            principal_role_manager = IPrincipalRoleManager(getSite())
+            principal_role_manager.assignRoleToPrincipal(ROLE_SITE_ADMIN.id,
+                                                         test_site_admin_username)
+            principal_role_manager.assignRoleToPrincipal(ROLE_CONTENT_EDITOR.id,
+                                                         course_admin_username)
+            
+            entry = find_object_with_ntiid(self.course_ntiid)
+            course_oid = to_external_ntiid_oid(ICourseInstance(entry))
+        
+        course_admin_environ = self._make_extra_environ(user=course_admin_username)
+        user_env = self._make_extra_environ(awarded_user_username)
+        nt_admin_environ = self._make_extra_environ()
+        
+        # Admin links
+        course = self.testapp.get('/dataserver2/Objects/%s' % course_oid)
+        course_ext = course.json_body
+        course_roles_href = self.require_link_href_with_rel(course_ext, VIEW_COURSE_ROLES)
+        
+        data = dict()
+        data['roles'] = roles = dict()
+        roles['instructors'] = list([course_admin_username])
+        roles['editors'] = list([])
+
+        #Set up instructor
+        self.testapp.put_json(course_roles_href, data)
+        
+        def get_enr():
+            res = self.testapp.get('/dataserver2/users/%s/Courses/EnrolledCourses' % awarded_user_username,
+                                   extra_environ=user_env)
+            res = res.json_body['Items'][0]
+            return res
+        
+        enr_res = get_enr()
+        award_completed_url = self.require_link_href_with_rel(enr_res, AWARDED_COMPLETED_ITEMS_PATH_NAME)
+        data = {'object': 1234}
+        res = self.testapp.post_json(award_completed_url, data, extra_environ=course_admin_environ)

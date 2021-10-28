@@ -25,3 +25,6 @@ COMPLETED_ITEMS_PATH_NAME = u'CompletedItems'
 RESET_COMPLETION_VIEW = u'ResetCompletion'
 BUILD_COMPLETION_VIEW = u'BuildCompletion'
 USER_DATA_COMPLETION_VIEW = u'UserCompletionData'
+
+AWARDED_COMPLETED_ITEMS_PATH_NAME = u'AwardedCompletedItems'
+DELETE_AWARDED_COMPLETED_ITEM_VIEW = u'DeleteAwardedCompletedItem'

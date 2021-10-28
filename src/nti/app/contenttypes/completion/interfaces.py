@@ -33,6 +33,13 @@ class ICompletedItemsContext(ICompletionContextContained):
     user = Object(IUser,
                   title=u'The user we are scoped to',
                   required=False)
+    
+
+class IAwardedCompletedItemsContext(ICompletionContextContained):
+
+    user = Object(IUser,
+                  title=u'The user we are scoped to',
+                  required=False)
 
 
 class ICompletionContextUserProgress(ICompletionContextContained):

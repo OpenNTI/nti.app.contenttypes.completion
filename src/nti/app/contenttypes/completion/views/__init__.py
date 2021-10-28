@@ -38,8 +38,11 @@ from nti.app.contenttypes.completion import COMPLETION_DEFAULT_VIEW_NAME
 from nti.app.contenttypes.completion import COMPLETION_REQUIRED_VIEW_NAME
 from nti.app.contenttypes.completion import COMPLETION_NOT_REQUIRED_VIEW_NAME
 from nti.app.contenttypes.completion import DEFAULT_REQUIRED_POLICY_PATH_NAME
+from nti.app.contenttypes.completion import AWARDED_COMPLETED_ITEMS_PATH_NAME
+from nti.app.contenttypes.completion import DELETE_AWARDED_COMPLETED_ITEM_VIEW
 
 from nti.app.contenttypes.completion.interfaces import ICompletedItemsContext
+from nti.app.contenttypes.completion.interfaces import IAwardedCompletedItemsContext
 from nti.app.contenttypes.completion.interfaces import ICompletionContextACLProvider
 from nti.app.contenttypes.completion.interfaces import ICompletionContextUserProgress
 
@@ -195,6 +198,24 @@ class UsersProgressPathAdapter(Contained, CompletionContextMixin, UserTraversabl
 
     __name__ = _USERS_SUBPATH
 
+    def __init__(self, context, request):
+        self.context = context
+        self.request = request
+        self.__parent__ = context
+        self.user = None
+
+def awarded_completed_items_link(completion_context, user):
+    return Link(completion_context,
+                rel=AWARDED_COMPLETED_ITEMS_PATH_NAME,
+                elements=('Completion', AWARDED_COMPLETED_ITEMS_PATH_NAME, 'users', user.username))
+
+@interface.implementer(IPathAdapter)
+@interface.implementer(IAwardedCompletedItemsContext)
+@interface.implementer(ITraversable)
+class AwardedCompletedItemsPathAdapter(Contained, CompletionContextMixin, UserTraversableMixin):
+    
+    __name__ = AWARDED_COMPLETED_ITEMS_PATH_NAME
+    
     def __init__(self, context, request):
         self.context = context
         self.request = request

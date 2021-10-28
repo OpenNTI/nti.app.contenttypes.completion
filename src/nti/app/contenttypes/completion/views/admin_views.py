@@ -25,11 +25,14 @@ from nti.app.contenttypes.completion.catalog import get_completion_contexts
 from nti.app.contenttypes.completion.catalog import rebuild_completed_items_catalog
 
 from nti.app.contenttypes.completion.interfaces import ICompletedItemsContext
+from nti.app.contenttypes.completion.interfaces import IAwardedCompletedItemsContext
 from nti.app.contenttypes.completion.interfaces import ICompletionContextCohort
 
 from nti.app.contenttypes.completion.views import BUILD_COMPLETION_VIEW
 from nti.app.contenttypes.completion.views import RESET_COMPLETION_VIEW
 from nti.app.contenttypes.completion.views import USER_DATA_COMPLETION_VIEW
+from nti.app.contenttypes.completion.views import AWARDED_COMPLETED_ITEMS_PATH_NAME
+from nti.app.contenttypes.completion.views import CompletableItemsPathAdapter
 
 from nti.app.externalization.view_mixins import ModeledContentUploadRequestUtilsMixin
 
@@ -245,4 +248,22 @@ class UserCompletionDataView(AbstractAuthenticatedView):
         result['CompletableItems'] = sorted(completable_ntiids)
         result['RequiredItems'] = sorted(required_ntiids)
         result['OptionalItems'] = sorted(optional_ntiids)
+        return result
+    
+    
+@view_config(route_name='objects.generic.traversal',
+             renderer='rest',
+             context=IAwardedCompletedItemsContext,
+             name=AWARDED_COMPLETED_ITEMS_PATH_NAME,
+             permission=nauth.ACT_CONTENT_EDIT,
+             request_method='POST')
+class AwardCompletedItemView(AbstractAuthenticatedView):
+    """
+    A view that allows course admins to manually award a completable item
+    as completed, moving it into the user's IPrincipalAwardedCompletedItemContainer
+    """
+    
+    def __call__(self):
+        from IPython.terminal.debugger import set_trace;set_trace()
+        result = LocatedExternalDict()
         return result
