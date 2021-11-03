@@ -23,6 +23,8 @@ from zope import component
 
 from zope.component.hooks import getSite
 
+from zope.security.interfaces import IPrincipal
+
 from zope.securitypolicy.interfaces import IPrincipalRoleManager
 
 from nti.app.contenttypes.completion import COMPLETION_PATH_NAME
@@ -406,18 +408,27 @@ class TestAdminAwardViews(ApplicationLayerTest):
             assert_that(course_awarded_container.get_completed_item_count(item1), is_(0))
             
         award_completed_url = self.require_link_href_with_rel(enr_res, AWARDED_COMPLETED_ITEMS_PATH_NAME)
-        data = {'completable_ntiid': item_ntiid1}
+        data = {'MimeType': 'application/vnd.nextthought.completion.awardedcompleteditem', 'completable_ntiid': item_ntiid1}
         
         #Check permissions
         self.testapp.post_json(award_completed_url, data, extra_environ=user_environ, status=403)
         self.testapp.post_json(award_completed_url, data, extra_environ=course_editor_environ, status=403)
         
         res = self.testapp.post_json(award_completed_url, data, extra_environ=course_admin_environ)
-        
+
         with mock_dataserver.mock_db_trans(self.ds, site_name='platform.ou.edu'):
+            assert_that(res.json_body['awarder']['Username'], is_(course_admin_username))
+            assert_that(res.json_body['reason'], is_(''))
             assert_that(user_awarded_container.get_completed_item_count(), is_(1))
             assert_that(course_awarded_container.get_completed_item_count(item1), is_(1))
             assert_that(course_awarded_container.get_completed_item_count(item2), is_(0))
             
         data = {'completable_ntiid': item_ntiid2, 'reason': 'Good soup'}
         res = self.testapp.post_json(award_completed_url, data, extra_environ=course_admin_environ)
+        
+        with mock_dataserver.mock_db_trans(self.ds, site_name='platform.ou.edu'):
+            assert_that(res.json_body['awarder']['Username'], is_(course_admin_username))
+            assert_that(res.json_body['reason'], is_('Good soup'))
+            assert_that(user_awarded_container.get_completed_item_count(), is_(2))
+            assert_that(course_awarded_container.get_completed_item_count(item1), is_(1))
+            assert_that(course_awarded_container.get_completed_item_count(item2), is_(1))

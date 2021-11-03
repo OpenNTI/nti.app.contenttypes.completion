@@ -21,6 +21,8 @@ from zope import component
 
 from zope.cachedescriptors.property import Lazy
 
+from zope.security.interfaces import IPrincipal
+
 from nti.app.base.abstract_views import AbstractAuthenticatedView
 
 from nti.app.contenttypes.completion.catalog import get_completion_contexts
@@ -72,6 +74,7 @@ from nti.ntiids.ntiids import find_object_with_ntiid
 
 ITEMS = StandardExternalFields.ITEMS
 TOTAL = StandardExternalFields.TOTAL
+MIMETYPE = StandardExternalFields.MIMETYPE
 ITEM_COUNT = StandardExternalFields.ITEM_COUNT
 
 logger = __import__('logging').getLogger(__name__)
@@ -270,11 +273,30 @@ class UserCompletionDataView(AbstractAuthenticatedView):
              renderer='rest',
              context=IAwardedCompletedItemsContext,
              request_method='POST')
-class AwardCompletedItemView(AbstractAuthenticatedView):
+class AwardCompletedItemView(AbstractAuthenticatedView,
+                             ModeledContentUploadRequestUtilsMixin):
     """
     A view that allows course admins to manually award a completable item
     as completed, moving it into the user's IPrincipalAwardedCompletedItemContainer
     """
+    
+    DEFAULT_FACTORY_MIMETYPE = "application/vnd.nextthought.completion.awardedcompleteditem"
+
+    def readInput(self, value=None):
+        if self.request.body:
+            values = super(AwardCompletedItemView, self).readInput(value)
+        else:
+            values = self.request.params
+        values = dict(values)
+        # Can't be CaseInsensitive with internalization
+        if MIMETYPE not in values:
+            values[MIMETYPE] = self.DEFAULT_FACTORY_MIMETYPE
+        values['Item'] = self._get_item_for_key(values['completable_ntiid'])
+        values['Principal'] = self.context.user
+        values['CompletedDate'] = datetime.utcnow()
+        values['awarder'] = User.get_user(self.request.remote_user)
+        from IPython.terminal.debugger import set_trace;set_trace()
+        return values
     
     @Lazy
     def _course(self):
@@ -306,6 +328,7 @@ class AwardCompletedItemView(AbstractAuthenticatedView):
         user_awarded_container = component.getMultiAdapter((user, self.context.completion_context),
                                                    IPrincipalAwardedCompletedItemContainer)
         
+        '''
         try:
             completable_ntiid = self.request.json_body['completable_ntiid']
             completable = self._get_item_for_key(completable_ntiid)
@@ -322,7 +345,10 @@ class AwardCompletedItemView(AbstractAuthenticatedView):
                                                       CompletedDate=datetime.utcnow(),
                                                       awarder=User.get_user(self.request.remote_user),
                                                       reason=awarded_reason)
+        '''
+        from IPython.terminal.debugger import set_trace;set_trace()
+        awarded_item = self.readCreateUpdateContentObject(self.remoteUser)
         
-        user_awarded_container.add_completed_item(awarded_completed_item)
-        
-        return awarded_completed_item
+        user_awarded_container.add_completed_item(awarded_item)
+        from IPython.terminal.debugger import set_trace;set_trace()
+        return awarded_item

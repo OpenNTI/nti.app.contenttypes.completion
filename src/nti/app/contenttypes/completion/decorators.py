@@ -222,10 +222,7 @@ class CompletableItemDecorator(AbstractAuthenticatedRequestAwareDecorator):
                 awarded_item = get_awarded_completed_item(user, 
                                                           completion_context,
                                                           context)
-                result['AwardedItem'] = awarded_item
-                result['AwardedDate'] = getattr(awarded_item, 'CompletedDate', None)
-                result['AwarderPrincipal'] = getattr(awarded_item, 'awarder', None)
-                result['AwardedReason'] = getattr(awarded_item, 'reason', None)             
+                result['AwardedItem'] = awarded_item            
 
 
 @component.adapter(ICompletableItem)
