@@ -12,6 +12,7 @@ from hamcrest import contains
 from hamcrest import not_none
 from hamcrest import has_entry
 from hamcrest import has_length
+from hamcrest import has_key
 from hamcrest import assert_that
 
 import fudge
@@ -351,6 +352,7 @@ class TestAdminAwardViews(ApplicationLayerTest):
             completion_context = find_interface(entry, ICompletionContext)
             item1 = PersistentCompletableItem('ntiid1')
             item2 = PersistentCompletableItem('ntiid2')
+            non_contained_item = PersistentCompletableItem('non_contained_item')
             item1.containerId = 'container_id'
             item2.containerId = 'container_id'
             interface.alsoProvides(completion_context, IContained)
@@ -361,6 +363,8 @@ class TestAdminAwardViews(ApplicationLayerTest):
             item1.ntiid = item_ntiid1
             item_ntiid2 = to_external_ntiid_oid(item2)
             item2.ntiid = item_ntiid2
+            non_contained_item_ntiid = to_external_ntiid_oid(non_contained_item)
+            non_contained_item.ntiid = non_contained_item_ntiid
             
         with mock_dataserver.mock_db_trans(self.ds, site_name='platform.ou.edu'):
             
@@ -410,25 +414,54 @@ class TestAdminAwardViews(ApplicationLayerTest):
         award_completed_url = self.require_link_href_with_rel(enr_res, AWARDED_COMPLETED_ITEMS_PATH_NAME)
         data = {'MimeType': 'application/vnd.nextthought.completion.awardedcompleteditem', 'completable_ntiid': item_ntiid1}
         
-        #Check permissions
+        # Check permissions
         self.testapp.post_json(award_completed_url, data, extra_environ=user_environ, status=403)
         self.testapp.post_json(award_completed_url, data, extra_environ=course_editor_environ, status=403)
         
         res = self.testapp.post_json(award_completed_url, data, extra_environ=course_admin_environ)
 
         with mock_dataserver.mock_db_trans(self.ds, site_name='platform.ou.edu'):
-            assert_that(res.json_body['awarder']['Username'], is_(course_admin_username))
-            assert_that(res.json_body['reason'], is_(''))
+            # These three attributes should not be externalized
+            assert_that(res.json_body, not has_key('Item'))
+            assert_that(res.json_body, not has_key('Principal'))
+            assert_that(res.json_body, not has_key('awarder'))
+            
+            assert_that(res.json_body['reason'], is_(None))
+            
             assert_that(user_awarded_container.get_completed_item_count(), is_(1))
+            assert_that(user_awarded_container[item_ntiid1].awarder.username, is_(course_admin_username))
+            assert_that(user_awarded_container[item_ntiid1].Principal.username, is_(awarded_user_username))
+            assert_that(user_awarded_container[item_ntiid1].Item, is_(item1))
+            
             assert_that(course_awarded_container.get_completed_item_count(item1), is_(1))
             assert_that(course_awarded_container.get_completed_item_count(item2), is_(0))
-            
+         
+        # Should work even without MimeType explicitly passed in   
         data = {'completable_ntiid': item_ntiid2, 'reason': 'Good soup'}
         res = self.testapp.post_json(award_completed_url, data, extra_environ=course_admin_environ)
         
         with mock_dataserver.mock_db_trans(self.ds, site_name='platform.ou.edu'):
-            assert_that(res.json_body['awarder']['Username'], is_(course_admin_username))
             assert_that(res.json_body['reason'], is_('Good soup'))
             assert_that(user_awarded_container.get_completed_item_count(), is_(2))
             assert_that(course_awarded_container.get_completed_item_count(item1), is_(1))
             assert_that(course_awarded_container.get_completed_item_count(item2), is_(1))
+            
+        # POST completable that already exists; test 409 and being able to overwrite
+        data['reason'] = 'Number one'    
+        res = self.testapp.post_json(award_completed_url, data, extra_environ=course_admin_environ, status=409)
+        
+        overwrite_awarded_link = self.require_link_href_with_rel(res.json_body, 'overwrite')
+        res = self.testapp.post_json(overwrite_awarded_link, data, extra_environ=course_admin_environ)
+        
+        with mock_dataserver.mock_db_trans(self.ds, site_name='platform.ou.edu'):
+            assert_that(res.json_body['reason'], is_('Number one'))
+            assert_that(user_awarded_container.get_completed_item_count(), is_(2))
+            assert_that(course_awarded_container.get_completed_item_count(item1), is_(1))
+            assert_that(course_awarded_container.get_completed_item_count(item2), is_(1))
+            
+        # POST with ntiid that doesn't match an item and with item ntiid that doesn't map to completable in course; both should 422
+        data = {'completable_ntiid': non_contained_item_ntiid}
+        self.testapp.post_json(award_completed_url, data, extra_environ=course_admin_environ, status=422)
+        
+        data = {'completable_ntiid': 'not_a_valid_ntiid'}
+        self.testapp.post_json(award_completed_url, data, extra_environ=course_admin_environ, status=422)

@@ -8,7 +8,7 @@ from __future__ import absolute_import
 # pylint: disable=protected-access,too-many-public-methods,arguments-differ
 
 from hamcrest import is_
-from hamcrest import none
+from hamcrest import has_key
 from hamcrest import not_none
 from hamcrest import assert_that
 
@@ -48,7 +48,7 @@ class TestExternalization(unittest.TestCase):
         now = datetime.utcnow()
         user1 = MockUser(u'user1')
         user2 = MockUser(u'user2')
-        completable1 = MockCompletableItem('completable1')
+        completable1 = MockCompletableItem(u'tag:nextthought.com,2011-10:NTI-TEST-completable1')
         
         awarded_completed_item = AwardedCompletedItem(Principal=user1,
                                                       Item=completable1,
@@ -62,17 +62,13 @@ class TestExternalization(unittest.TestCase):
         assert_that(ext_obj[CLASS], is_('AwardedCompletedItem'))
         assert_that(ext_obj[MIMETYPE],
                     is_(AwardedCompletedItem.mime_type))
-        '''
+        
         assert_that(ext_obj[CREATED_TIME], not_none())
         assert_that(ext_obj[LAST_MODIFIED], not_none())
-        assert_that(ext_obj['amount'], is_(42))
-        assert_that(ext_obj['title'], is_(u'Credit conference'))
-        assert_that(ext_obj['description'], is_(u'desc'))
-        assert_that(ext_obj['issuer'], is_(u'my issuer'))
-        assert_that(ext_obj['awarded_date'], not_none())
-        assert_that(ext_obj['credit_definition']['credit_type'], is_(u'Credit'))
-        assert_that(ext_obj['credit_definition']['credit_units'], is_(u'Hours'))
-        '''
+        assert_that(ext_obj['Creator'], is_(u'%s' % user2))
+        assert_that(ext_obj, not has_key('Principal'))
+        assert_that(ext_obj, not has_key('Item'))
+        assert_that(ext_obj, not has_key('awarder'))
 
         factory = find_factory_for(ext_obj)
         assert_that(factory, not_none())
@@ -81,6 +77,12 @@ class TestExternalization(unittest.TestCase):
         ext_obj['Principal'] = user1
         ext_obj['Item'] = completable1
         ext_obj['awarder'] = user2
-        from IPython.terminal.debugger import set_trace;set_trace()
+        
         update_from_external_object(new_io, ext_obj, require_updater=True)
-        from IPython.terminal.debugger import set_trace;set_trace()
+
+        assert_that(new_io.mimeType,
+                    is_(AwardedCompletedItem.mime_type))
+        assert_that(new_io.Principal, is_(user1))
+        assert_that(new_io.Item, is_(completable1))
+        assert_that(new_io.awarder, is_(user2))
+        assert_that(new_io.creator, is_(user2))

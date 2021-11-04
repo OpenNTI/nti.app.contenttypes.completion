@@ -38,6 +38,8 @@ from nti.app.contenttypes.completion.views import USER_DATA_COMPLETION_VIEW
 from nti.app.contenttypes.completion.views import raise_error
 from nti.app.contenttypes.completion.views import MessageFactory as _
 
+from nti.app.externalization.error import raise_json_error
+
 from nti.app.externalization.view_mixins import ModeledContentUploadRequestUtilsMixin
 
 from nti.common.string import is_true
@@ -66,8 +68,12 @@ from nti.dataserver.interfaces import IDataserverFolder
 
 from nti.dataserver.users.users import User
 
+from nti.externalization.externalization import to_external_object
+
 from nti.externalization.interfaces import LocatedExternalDict
 from nti.externalization.interfaces import StandardExternalFields
+
+from nti.links.links import Link
 
 from nti.ntiids.ntiids import find_object_with_ntiid
 
@@ -76,6 +82,8 @@ ITEMS = StandardExternalFields.ITEMS
 TOTAL = StandardExternalFields.TOTAL
 MIMETYPE = StandardExternalFields.MIMETYPE
 ITEM_COUNT = StandardExternalFields.ITEM_COUNT
+CLASS = StandardExternalFields.CLASS
+LINKS = StandardExternalFields.LINKS
 
 logger = __import__('logging').getLogger(__name__)
 
@@ -295,7 +303,8 @@ class AwardCompletedItemView(AbstractAuthenticatedView,
         values['Principal'] = self.context.user
         values['CompletedDate'] = datetime.utcnow()
         values['awarder'] = User.get_user(self.request.remote_user)
-        from IPython.terminal.debugger import set_trace;set_trace()
+        if not 'Success' in values:
+            values['Success'] = True
         return values
     
     @Lazy
@@ -328,13 +337,13 @@ class AwardCompletedItemView(AbstractAuthenticatedView,
         user_awarded_container = component.getMultiAdapter((user, self.context.completion_context),
                                                    IPrincipalAwardedCompletedItemContainer)
         
-        '''
+        
         try:
             completable_ntiid = self.request.json_body['completable_ntiid']
             completable = self._get_item_for_key(completable_ntiid)
         except KeyError: 
             raise hexc.HTTPBadRequest("Must POST json with 'completable_ntiid' key")
-        
+        '''
         try:
             awarded_reason = self.request.json_body['reason']
         except KeyError:
@@ -346,9 +355,33 @@ class AwardCompletedItemView(AbstractAuthenticatedView,
                                                       awarder=User.get_user(self.request.remote_user),
                                                       reason=awarded_reason)
         '''
-        from IPython.terminal.debugger import set_trace;set_trace()
         awarded_item = self.readCreateUpdateContentObject(self.remoteUser)
         
+        if 'force' in self.request.params:
+            force_overwrite = self.request.params['force']
+        else:
+            force_overwrite = False
+        
+        if completable_ntiid in user_awarded_container:
+            if force_overwrite:
+                user_awarded_container.remove_item(completable)
+            else:
+            # Provide links to overwrite (force flag) or refresh on conflict.
+                links = []
+                link = Link(self.request.path, rel=u'overwrite',
+                            params={u'force': True}, method=u'POST')
+                links.append(link)
+                raise_json_error(
+                    self.request,
+                    hexc.HTTPConflict,
+                    {
+                        CLASS: 'DestructiveChallenge',
+                        'message': _(u'This item has already been awarded complete.'),
+                        'code': 'ContentVersionConflictError',
+                        LINKS: to_external_object(links),
+                        MIMETYPE: 'application/vnd.nextthought.destructivechallenge'
+                    },
+                    None)
+        
         user_awarded_container.add_completed_item(awarded_item)
-        from IPython.terminal.debugger import set_trace;set_trace()
         return awarded_item
