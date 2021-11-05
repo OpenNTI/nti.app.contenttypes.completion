@@ -21,8 +21,6 @@ from zope import component
 
 from zope.cachedescriptors.property import Lazy
 
-from zope.security.interfaces import IPrincipal
-
 from nti.app.base.abstract_views import AbstractAuthenticatedView
 
 from nti.app.contenttypes.completion.catalog import get_completion_contexts
@@ -43,8 +41,6 @@ from nti.app.externalization.error import raise_json_error
 from nti.app.externalization.view_mixins import ModeledContentUploadRequestUtilsMixin
 
 from nti.common.string import is_true
-
-from nti.contenttypes.completion.completion import AwardedCompletedItem
 
 from nti.contenttypes.completion.interfaces import ICompletedItemContainer
 from nti.contenttypes.completion.interfaces import ICompletableItemProvider

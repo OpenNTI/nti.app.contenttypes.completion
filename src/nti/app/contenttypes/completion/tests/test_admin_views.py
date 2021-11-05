@@ -24,8 +24,6 @@ from zope import component
 
 from zope.component.hooks import getSite
 
-from zope.security.interfaces import IPrincipal
-
 from zope.securitypolicy.interfaces import IPrincipalRoleManager
 
 from nti.app.contenttypes.completion import COMPLETION_PATH_NAME

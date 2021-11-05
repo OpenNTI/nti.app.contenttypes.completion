@@ -16,8 +16,6 @@ import unittest
 
 from datetime import datetime
 
-from nti.app.contenttypes.credit.credit import AwardedCredit
-
 from nti.externalization.externalization import to_external_object
 
 from nti.externalization.interfaces import StandardExternalFields
@@ -86,3 +84,4 @@ class TestExternalization(unittest.TestCase):
         assert_that(new_io.Item, is_(completable1))
         assert_that(new_io.awarder, is_(user2))
         assert_that(new_io.creator, is_(user2))
+        assert_that(new_io.item_ntiid, is_(completable1.ntiid))
