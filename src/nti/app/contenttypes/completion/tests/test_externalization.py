@@ -68,7 +68,7 @@ class TestExternalization(unittest.TestCase):
         assert_that(ext_obj['Creator'], is_(u'%s' % user2))
         assert_that(ext_obj, not has_key('Principal'))
         assert_that(ext_obj, not has_key('Item'))
-        assert_that(ext_obj, not has_key('awarder'))
+        assert_that(ext_obj, has_key('awarder'))
 
         factory = find_factory_for(ext_obj)
         assert_that(factory, not_none())

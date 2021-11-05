@@ -413,7 +413,6 @@ class TestAdminAwardViews(ApplicationLayerTest):
             
         award_completed_url = self.require_link_href_with_rel(enr_res, AWARDED_COMPLETED_ITEMS_PATH_NAME)
         data = {'MimeType': 'application/vnd.nextthought.completion.awardedcompleteditem', 'completable_ntiid': item_ntiid1}
-        
         # Check permissions
         self.testapp.post_json(award_completed_url, data, extra_environ=user_environ, status=403)
         self.testapp.post_json(award_completed_url, data, extra_environ=course_editor_environ, status=403)
@@ -421,10 +420,10 @@ class TestAdminAwardViews(ApplicationLayerTest):
         res = self.testapp.post_json(award_completed_url, data, extra_environ=course_admin_environ)
 
         with mock_dataserver.mock_db_trans(self.ds, site_name='platform.ou.edu'):
-            # These three attributes should not be externalized
+
             assert_that(res.json_body, not has_key('Item'))
             assert_that(res.json_body, not has_key('Principal'))
-            assert_that(res.json_body, not has_key('awarder'))
+            assert_that(res.json_body, has_key('awarder'))
             
             assert_that(res.json_body['reason'], is_(None))
             

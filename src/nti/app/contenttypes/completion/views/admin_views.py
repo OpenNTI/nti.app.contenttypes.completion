@@ -339,23 +339,9 @@ class AwardCompletedItemView(AbstractAuthenticatedView,
         
         
         try:
-            completable_ntiid = self.request.json_body['completable_ntiid']
-            completable = self._get_item_for_key(completable_ntiid)
+            completable_ntiid = self.request.json_body['completable_ntiid']            
         except KeyError: 
             raise hexc.HTTPBadRequest("Must POST json with 'completable_ntiid' key")
-        '''
-        try:
-            awarded_reason = self.request.json_body['reason']
-        except KeyError:
-            awarded_reason = ''
-        
-        awarded_completed_item = AwardedCompletedItem(Principal=user,
-                                                      Item=completable,
-                                                      CompletedDate=datetime.utcnow(),
-                                                      awarder=User.get_user(self.request.remote_user),
-                                                      reason=awarded_reason)
-        '''
-        awarded_item = self.readCreateUpdateContentObject(self.remoteUser)
         
         if 'force' in self.request.params:
             force_overwrite = self.request.params['force']
@@ -364,6 +350,7 @@ class AwardCompletedItemView(AbstractAuthenticatedView,
         
         if completable_ntiid in user_awarded_container:
             if force_overwrite:
+                completable = self._get_item_for_key(completable_ntiid)
                 user_awarded_container.remove_item(completable)
             else:
             # Provide links to overwrite (force flag) or refresh on conflict.
@@ -383,5 +370,6 @@ class AwardCompletedItemView(AbstractAuthenticatedView,
                     },
                     None)
         
+        awarded_item = self.readCreateUpdateContentObject(self.remoteUser)
         user_awarded_container.add_completed_item(awarded_item)
         return awarded_item
