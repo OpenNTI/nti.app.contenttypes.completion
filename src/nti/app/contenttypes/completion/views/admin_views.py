@@ -8,6 +8,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import absolute_import
 
+from datetime import datetime
+
 from pyramid import httpexceptions as hexc
 
 from pyramid.view import view_config
@@ -25,11 +27,16 @@ from nti.app.contenttypes.completion.catalog import get_completion_contexts
 from nti.app.contenttypes.completion.catalog import rebuild_completed_items_catalog
 
 from nti.app.contenttypes.completion.interfaces import ICompletedItemsContext
+from nti.app.contenttypes.completion.interfaces import IAwardedCompletedItemsContext
 from nti.app.contenttypes.completion.interfaces import ICompletionContextCohort
 
 from nti.app.contenttypes.completion.views import BUILD_COMPLETION_VIEW
 from nti.app.contenttypes.completion.views import RESET_COMPLETION_VIEW
 from nti.app.contenttypes.completion.views import USER_DATA_COMPLETION_VIEW
+from nti.app.contenttypes.completion.views import raise_error
+from nti.app.contenttypes.completion.views import MessageFactory as _
+
+from nti.app.externalization.error import raise_json_error
 
 from nti.app.externalization.view_mixins import ModeledContentUploadRequestUtilsMixin
 
@@ -38,23 +45,41 @@ from nti.common.string import is_true
 from nti.contenttypes.completion.interfaces import ICompletedItemContainer
 from nti.contenttypes.completion.interfaces import ICompletableItemProvider
 from nti.contenttypes.completion.interfaces import IPrincipalCompletedItemContainer
+from nti.contenttypes.completion.interfaces import IPrincipalAwardedCompletedItemContainer
+from nti.contenttypes.completion.interfaces import ICompletableItem
 
 from nti.contenttypes.completion.utils import update_completion
 from nti.contenttypes.completion.utils import get_completable_items_for_user
 from nti.contenttypes.completion.utils import get_required_completable_items_for_user
 
+from nti.contenttypes.courses.interfaces import ICourseInstance
+
+from nti.contenttypes.courses.utils import is_course_instructor
+
 from nti.dataserver import authorization as nauth
+
+from nti.dataserver.authorization import is_admin_or_site_admin
 
 from nti.dataserver.interfaces import IDataserverFolder
 
 from nti.dataserver.users.users import User
 
+from nti.externalization.externalization import to_external_object
+
 from nti.externalization.interfaces import LocatedExternalDict
 from nti.externalization.interfaces import StandardExternalFields
 
+from nti.links.links import Link
+
+from nti.ntiids.ntiids import find_object_with_ntiid
+
+
 ITEMS = StandardExternalFields.ITEMS
 TOTAL = StandardExternalFields.TOTAL
+MIMETYPE = StandardExternalFields.MIMETYPE
 ITEM_COUNT = StandardExternalFields.ITEM_COUNT
+CLASS = StandardExternalFields.CLASS
+LINKS = StandardExternalFields.LINKS
 
 logger = __import__('logging').getLogger(__name__)
 
@@ -246,3 +271,101 @@ class UserCompletionDataView(AbstractAuthenticatedView):
         result['RequiredItems'] = sorted(required_ntiids)
         result['OptionalItems'] = sorted(optional_ntiids)
         return result
+    
+    
+@view_config(route_name='objects.generic.traversal',
+             renderer='rest',
+             context=IAwardedCompletedItemsContext,
+             request_method='POST')
+class AwardCompletedItemView(AbstractAuthenticatedView,
+                             ModeledContentUploadRequestUtilsMixin):
+    """
+    A view that allows course admins to manually award a completable item
+    as completed, moving it into the user's IPrincipalAwardedCompletedItemContainer
+    """
+    
+    DEFAULT_FACTORY_MIMETYPE = "application/vnd.nextthought.completion.awardedcompleteditem"
+
+    def readInput(self, value=None):
+        if self.request.body:
+            values = super(AwardCompletedItemView, self).readInput(value)
+        else:
+            values = self.request.params
+        values = dict(values)
+        # Can't be CaseInsensitive with internalization
+        if MIMETYPE not in values:
+            values[MIMETYPE] = self.DEFAULT_FACTORY_MIMETYPE
+        values['Item'] = self._get_item_for_key(values['completable_ntiid'])
+        values['Principal'] = self.context.user
+        values['CompletedDate'] = datetime.utcnow()
+        values['awarder'] = User.get_user(self.request.remote_user)
+        if not 'Success' in values:
+            values['Success'] = True
+        return values
+    
+    @Lazy
+    def _course(self):
+        return ICourseInstance(self.context.completion_context)
+    
+    def _get_item_for_key(self, key):
+        item = find_object_with_ntiid(key)
+        if item is None:
+            logger.warn('Completable item not found with ntiid (%s)', key)
+            raise_error({'message': _(u"Object not found for ntiid."),
+                         'code': 'CompletableItemNotFoundError'})
+        if not ICompletableItem.providedBy(item):
+            logger.warn('Item is not ICompletableItem (%s)', key)
+            raise_error({'message': _(u"Item is not completable.."),
+                         'code': 'InvalidCompletableItemError'})
+        return item
+    
+    #Only course instructors, site admins, and NT admins should be able to manually award completables
+    def _check_access(self):
+        if      not is_admin_or_site_admin(self.remoteUser) \
+                and not is_course_instructor(self._course, self.remoteUser):
+                raise hexc.HTTPForbidden()
+    
+    def __call__(self):
+        self._check_access()
+        
+        user = self.context.user
+        
+        user_awarded_container = component.getMultiAdapter((user, self.context.completion_context),
+                                                   IPrincipalAwardedCompletedItemContainer)
+        
+        
+        try:
+            completable_ntiid = self.request.json_body['completable_ntiid']            
+        except KeyError: 
+            raise hexc.HTTPBadRequest("Must POST json with 'completable_ntiid' key")
+        
+        if 'force' in self.request.params:
+            force_overwrite = self.request.params['force']
+        else:
+            force_overwrite = False
+        
+        if completable_ntiid in user_awarded_container:
+            if force_overwrite:
+                completable = self._get_item_for_key(completable_ntiid)
+                user_awarded_container.remove_item(completable)
+            else:
+            # Provide links to overwrite (force flag) or refresh on conflict.
+                links = []
+                link = Link(self.request.path, rel=u'overwrite',
+                            params={u'force': True}, method=u'POST')
+                links.append(link)
+                raise_json_error(
+                    self.request,
+                    hexc.HTTPConflict,
+                    {
+                        CLASS: 'DestructiveChallenge',
+                        'message': _(u'This item has already been awarded complete.'),
+                        'code': 'ContentVersionConflictError',
+                        LINKS: to_external_object(links),
+                        MIMETYPE: 'application/vnd.nextthought.destructivechallenge'
+                    },
+                    None)
+        
+        awarded_item = self.readCreateUpdateContentObject(self.remoteUser)
+        user_awarded_container.add_completed_item(awarded_item)
+        return awarded_item

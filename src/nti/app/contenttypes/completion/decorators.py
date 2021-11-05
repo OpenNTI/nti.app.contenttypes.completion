@@ -21,6 +21,7 @@ from nti.app.contenttypes.completion import COMPLETABLE_ITEMS_PATH_NAME
 from nti.app.contenttypes.completion import COMPLETION_REQUIRED_VIEW_NAME
 from nti.app.contenttypes.completion import COMPLETION_NOT_REQUIRED_VIEW_NAME
 from nti.app.contenttypes.completion import DEFAULT_REQUIRED_POLICY_PATH_NAME
+from nti.app.contenttypes.completion import AWARDED_COMPLETED_ITEMS_PATH_NAME
 
 from nti.app.renderers.decorators import AbstractRequestAwareDecorator
 from nti.app.renderers.decorators import AbstractAuthenticatedRequestAwareDecorator
@@ -28,6 +29,7 @@ from nti.app.renderers.decorators import AbstractAuthenticatedRequestAwareDecora
 from nti.appserver.pyramid_authorization import has_permission
 
 from nti.contenttypes.completion.authorization import ACT_VIEW_PROGRESS
+from nti.contenttypes.completion.authorization import ACT_AWARD_PROGRESS
 
 from nti.contenttypes.completion.interfaces import ICompletableItem
 from nti.contenttypes.completion.interfaces import ICompletionContext
@@ -40,6 +42,7 @@ from nti.contenttypes.completion.interfaces import ICompletableItemDefaultRequir
 from nti.contenttypes.completion.interfaces import ICompletionContextCompletionPolicyConfigurationUtility
 
 from nti.contenttypes.completion.utils import get_completed_item
+from nti.contenttypes.completion.utils import get_awarded_completed_item
 
 from nti.dataserver.authorization import ACT_CONTENT_EDIT
 
@@ -216,6 +219,10 @@ class CompletableItemDecorator(AbstractAuthenticatedRequestAwareDecorator):
                                                     context)
                 result['CompletedItem'] = completed_item
                 result['CompletedDate'] = getattr(completed_item, 'CompletedDate', None)
+                awarded_item = get_awarded_completed_item(user, 
+                                                          completion_context,
+                                                          context)
+                result['AwardedItem'] = awarded_item            
 
 
 @component.adapter(ICompletableItem)

@@ -26,6 +26,18 @@
     <grant
         permission="nti.actions.completion.listprogress"
         role="role:nti.dataserver.site-admin" />
+        
+    <grant
+        permission="nti.actions.completion.awardprogress"
+        role="role:nti.dataserver.site-admin" />
+        
+    <grant
+		permission="nti.actions.completion.awardprogress"
+		role="nti.roles.course_instructor" />
+
+	<grant
+		permission="nti.actions.completion.awardprogress"
+		role="nti.roles.course_ta" />
 
     <!-- adapter -->
     <adapter factory=".adapters._completion_context_progress"
@@ -60,6 +72,12 @@
                   pyramid.interfaces.IRequest"
              factory=".views.CompletedItemsPathAdapter"
              provides="zope.traversing.interfaces.IPathAdapter" />
+             
+    <adapter name="AwardedCompletedItems"
+             for=".views.CompletionPathAdapter
+                  pyramid.interfaces.IRequest"
+             factory=".views.AwardedCompletedItemsPathAdapter"
+             provides="zope.traversing.interfaces.IPathAdapter" />
 
     <adapter name="Progress"
              for=".views.CompletionPathAdapter
@@ -86,6 +104,11 @@
     <!-- IUser completion adapter -->
     <adapter factory="nti.contenttypes.completion.adapters._context_to_principal_container"
              provides="nti.contenttypes.completion.interfaces.IPrincipalCompletedItemContainer"
+             for="nti.coremetadata.interfaces.IUser
+                  nti.contenttypes.completion.interfaces.ICompletionContext" />
+                  
+    <adapter factory="nti.contenttypes.completion.adapters._context_to_principal_awarded_container"
+             provides="nti.contenttypes.completion.interfaces.IPrincipalAwardedCompletedItemContainer"
              for="nti.coremetadata.interfaces.IUser
                   nti.contenttypes.completion.interfaces.ICompletionContext" />
 
