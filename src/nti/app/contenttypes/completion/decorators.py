@@ -22,6 +22,7 @@ from nti.app.contenttypes.completion import COMPLETION_REQUIRED_VIEW_NAME
 from nti.app.contenttypes.completion import COMPLETION_NOT_REQUIRED_VIEW_NAME
 from nti.app.contenttypes.completion import DEFAULT_REQUIRED_POLICY_PATH_NAME
 from nti.app.contenttypes.completion import AWARDED_COMPLETED_ITEMS_PATH_NAME
+from nti.app.contenttypes.completion import DELETE_AWARDED_COMPLETED_ITEM_VIEW
 
 from nti.app.renderers.decorators import AbstractRequestAwareDecorator
 from nti.app.renderers.decorators import AbstractAuthenticatedRequestAwareDecorator
@@ -32,6 +33,7 @@ from nti.contenttypes.completion.authorization import ACT_VIEW_PROGRESS
 from nti.contenttypes.completion.authorization import ACT_AWARD_PROGRESS
 
 from nti.contenttypes.completion.interfaces import ICompletableItem
+from nti.contenttypes.completion.interfaces import IAwardedCompletedItem
 from nti.contenttypes.completion.interfaces import ICompletionContext
 from nti.contenttypes.completion.interfaces import ICompletionSubContext
 from nti.contenttypes.completion.interfaces import ICompletionContextProvider
@@ -237,3 +239,26 @@ class _CompletableItemCompletionPolicyDecorator(AbstractRequestAwareDecorator):
         if not ICompletionContext.providedBy(context):
             result['CompletionPolicy'] = component.queryMultiAdapter((context, self._completion_context(context)),
                                                                      ICompletableItemCompletionPolicy)
+            
+@component.adapter(IAwardedCompletedItem)
+@interface.implementer(IExternalMappingDecorator)
+class _AwardedCompletedItemDecorator(AbstractAuthenticatedRequestAwareDecorator):
+    """
+    Decorate AwardedCompletedItems with a link to DELETE them and any other relevant information
+    """
+    
+    def _predicate(self, context, unused_result):
+        # TODO: Implement predicate check after new ACT_AWARD_PROGRESS permission is implemented
+        return True
+    
+    def _do_decorate_external(self, context, result):
+        _links = result.setdefault(LINKS, [])
+        link = Link(context,
+                    rel=DELETE_AWARDED_COMPLETED_ITEM_VIEW,
+                    method='DELETE')
+        interface.alsoProvides(link, ILocation)
+        link.__name__ = ''
+        link.__parent__ = context
+        _links.append(link)
+        from IPython.terminal.debugger import set_trace;set_trace()
+        return

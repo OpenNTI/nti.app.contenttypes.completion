@@ -137,6 +137,11 @@
                 provides="nti.externalization.interfaces.IExternalMappingDecorator"
                 for="nti.contenttypes.completion.interfaces.ICompletableItem
                      pyramid.interfaces.IRequest" />
+                     
+    <subscriber factory=".decorators._AwardedCompletedItemDecorator"
+                provides="nti.externalization.interfaces.IExternalMappingDecorator"
+                for="nti.contenttypes.completion.interfaces.IAwardedCompletedItem
+                     pyramid.interfaces.IRequest" />
 
 	<!-- Index  -->
 	<adapter factory=".adapters._completed_item_to_site" />

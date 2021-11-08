@@ -33,6 +33,7 @@ from nti.app.contenttypes.completion.interfaces import ICompletionContextCohort
 from nti.app.contenttypes.completion.views import BUILD_COMPLETION_VIEW
 from nti.app.contenttypes.completion.views import RESET_COMPLETION_VIEW
 from nti.app.contenttypes.completion.views import USER_DATA_COMPLETION_VIEW
+from nti.app.contenttypes.completion.views import DELETE_AWARDED_COMPLETED_ITEM_VIEW
 from nti.app.contenttypes.completion.views import raise_error
 from nti.app.contenttypes.completion.views import MessageFactory as _
 
@@ -47,6 +48,7 @@ from nti.contenttypes.completion.interfaces import ICompletableItemProvider
 from nti.contenttypes.completion.interfaces import IPrincipalCompletedItemContainer
 from nti.contenttypes.completion.interfaces import IPrincipalAwardedCompletedItemContainer
 from nti.contenttypes.completion.interfaces import ICompletableItem
+from nti.contenttypes.completion.interfaces import IAwardedCompletedItem
 
 from nti.contenttypes.completion.utils import update_completion
 from nti.contenttypes.completion.utils import get_completable_items_for_user
@@ -369,3 +371,15 @@ class AwardCompletedItemView(AbstractAuthenticatedView,
         awarded_item = self.readCreateUpdateContentObject(self.remoteUser)
         user_awarded_container.add_completed_item(awarded_item)
         return awarded_item
+    
+    
+@view_config(route_name='objects.generic.traversal',
+             renderer='rest',
+             name=DELETE_AWARDED_COMPLETED_ITEM_VIEW,
+             context=IAwardedCompletedItem,
+             request_method='DELETE')
+class AwardCompletedItemDeleteView(AbstractAuthenticatedView):
+    
+    def __call__(self):
+        from IPython.terminal.debugger import set_trace;set_trace()
+        return True

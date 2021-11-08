@@ -27,6 +27,7 @@ from zope.component.hooks import getSite
 from zope.securitypolicy.interfaces import IPrincipalRoleManager
 
 from nti.app.contenttypes.completion import COMPLETION_PATH_NAME
+from nti.app.contenttypes.completion import DELETE_AWARDED_COMPLETED_ITEM_VIEW
 from nti.app.contenttypes.completion import BUILD_COMPLETION_VIEW
 from nti.app.contenttypes.completion import RESET_COMPLETION_VIEW
 from nti.app.contenttypes.completion import USER_DATA_COMPLETION_VIEW
@@ -134,7 +135,7 @@ class TestAdminViews(ApplicationLayerTest):
         user2_stats_url = '%s/users/%s/@@%s' % (root_url,
                                                 user2_username,
                                                 USER_DATA_COMPLETION_VIEW)
-
+        
         res = self.testapp.get(user1_stats_url).json_body
         assert_that(res['CompletableItems'], has_length(0))
         assert_that(res['CompletedItems'], has_length(1))
@@ -411,11 +412,16 @@ class TestAdminAwardViews(ApplicationLayerTest):
             
         award_completed_url = self.require_link_href_with_rel(enr_res, AWARDED_COMPLETED_ITEMS_PATH_NAME)
         data = {'MimeType': 'application/vnd.nextthought.completion.awardedcompleteditem', 'completable_ntiid': item_ntiid1}
+        
         # Check permissions
         self.testapp.post_json(award_completed_url, data, extra_environ=user_environ, status=403)
         self.testapp.post_json(award_completed_url, data, extra_environ=course_editor_environ, status=403)
         
         res = self.testapp.post_json(award_completed_url, data, extra_environ=course_admin_environ)
+        
+        delete_awarded_link = self.require_link_href_with_rel(res.json_body, DELETE_AWARDED_COMPLETED_ITEM_VIEW)
+        from IPython.terminal.debugger import set_trace;set_trace()
+        self.testapp.delete(delete_awarded_link)
 
         with mock_dataserver.mock_db_trans(self.ds, site_name='platform.ou.edu'):
 
