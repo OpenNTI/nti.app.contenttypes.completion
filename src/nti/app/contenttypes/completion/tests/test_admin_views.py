@@ -418,10 +418,6 @@ class TestAdminAwardViews(ApplicationLayerTest):
         self.testapp.post_json(award_completed_url, data, extra_environ=course_editor_environ, status=403)
         
         res = self.testapp.post_json(award_completed_url, data, extra_environ=course_admin_environ)
-        
-        delete_awarded_link = self.require_link_href_with_rel(res.json_body, DELETE_AWARDED_COMPLETED_ITEM_VIEW)
-        from IPython.terminal.debugger import set_trace;set_trace()
-        self.testapp.delete(delete_awarded_link)
 
         with mock_dataserver.mock_db_trans(self.ds, site_name='platform.ou.edu'):
 
@@ -468,3 +464,12 @@ class TestAdminAwardViews(ApplicationLayerTest):
         
         data = {'completable_ntiid': 'not_a_valid_ntiid'}
         self.testapp.post_json(award_completed_url, data, extra_environ=course_admin_environ, status=422)
+        
+        #Test deletion of AwardedCompletedItem
+        delete_awarded_link = self.require_link_href_with_rel(res.json_body, DELETE_AWARDED_COMPLETED_ITEM_VIEW)
+        self.testapp.delete(delete_awarded_link)
+        
+        with mock_dataserver.mock_db_trans(self.ds, site_name='platform.ou.edu'):
+            assert_that(user_awarded_container.get_completed_item_count(), is_(1))
+            assert_that(course_awarded_container.get_completed_item_count(item1), is_(1))
+            assert_that(course_awarded_container.get_completed_item_count(item2), is_(0))

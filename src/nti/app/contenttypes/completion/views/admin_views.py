@@ -33,13 +33,14 @@ from nti.app.contenttypes.completion.interfaces import ICompletionContextCohort
 from nti.app.contenttypes.completion.views import BUILD_COMPLETION_VIEW
 from nti.app.contenttypes.completion.views import RESET_COMPLETION_VIEW
 from nti.app.contenttypes.completion.views import USER_DATA_COMPLETION_VIEW
-from nti.app.contenttypes.completion.views import DELETE_AWARDED_COMPLETED_ITEM_VIEW
 from nti.app.contenttypes.completion.views import raise_error
 from nti.app.contenttypes.completion.views import MessageFactory as _
 
 from nti.app.externalization.error import raise_json_error
 
 from nti.app.externalization.view_mixins import ModeledContentUploadRequestUtilsMixin
+
+from nti.appserver.ugd_edit_views import UGDDeleteView
 
 from nti.common.string import is_true
 
@@ -321,7 +322,8 @@ class AwardCompletedItemView(AbstractAuthenticatedView,
                          'code': 'InvalidCompletableItemError'})
         return item
     
-    #Only course instructors, site admins, and NT admins should be able to manually award completables
+    # Only course instructors, site admins, and NT admins should be able to manually award completables
+    # This will be replaced by the new ACT_AWARD_PROGRESS permission when implemented
     def _check_access(self):
         if      not is_admin_or_site_admin(self.remoteUser) \
                 and not is_course_instructor(self._course, self.remoteUser):
@@ -375,11 +377,24 @@ class AwardCompletedItemView(AbstractAuthenticatedView,
     
 @view_config(route_name='objects.generic.traversal',
              renderer='rest',
-             name=DELETE_AWARDED_COMPLETED_ITEM_VIEW,
              context=IAwardedCompletedItem,
              request_method='DELETE')
-class AwardCompletedItemDeleteView(AbstractAuthenticatedView):
+class AwardCompletedItemDeleteView(UGDDeleteView):
+    
+    # Only course instructors, site admins, and NT admins should be able to manually award completables
+    # This will be replaced by the new ACT_AWARD_PROGRESS permission when implemented
+    def _check_access(self):
+        if      not is_admin_or_site_admin(self.remoteUser) \
+                and not is_course_instructor(self._course, self.remoteUser):
+                raise hexc.HTTPForbidden()
+    
+    def _do_delete_object(self, theObject):
+        container = theObject.__parent__
+        del container[theObject.__name__]
+        return theObject
     
     def __call__(self):
-        from IPython.terminal.debugger import set_trace;set_trace()
-        return True
+        self._check_access()
+        result = super(AwardCompletedItemDeleteView, self).__call__()
+        logger.info('Deleted %s', self.context)
+        return result

@@ -253,12 +253,10 @@ class _AwardedCompletedItemDecorator(AbstractAuthenticatedRequestAwareDecorator)
     
     def _do_decorate_external(self, context, result):
         _links = result.setdefault(LINKS, [])
-        link = Link(context,
+        link = Link('/dataserver2/Objects/%s' % result['OID'],
                     rel=DELETE_AWARDED_COMPLETED_ITEM_VIEW,
                     method='DELETE')
         interface.alsoProvides(link, ILocation)
         link.__name__ = ''
         link.__parent__ = context
         _links.append(link)
-        from IPython.terminal.debugger import set_trace;set_trace()
-        return
