@@ -239,24 +239,3 @@ class _CompletableItemCompletionPolicyDecorator(AbstractRequestAwareDecorator):
         if not ICompletionContext.providedBy(context):
             result['CompletionPolicy'] = component.queryMultiAdapter((context, self._completion_context(context)),
                                                                      ICompletableItemCompletionPolicy)
-            
-@component.adapter(IAwardedCompletedItem)
-@interface.implementer(IExternalMappingDecorator)
-class _AwardedCompletedItemDecorator(AbstractAuthenticatedRequestAwareDecorator):
-    """
-    Decorate AwardedCompletedItems with a link to DELETE them and any other relevant information
-    """
-    
-    def _predicate(self, context, unused_result):
-        # TODO: Implement predicate check after new ACT_AWARD_PROGRESS permission is implemented
-        return True
-    
-    def _do_decorate_external(self, context, result):
-        _links = result.setdefault(LINKS, [])
-        link = Link('/dataserver2/Objects/%s' % result['OID'],
-                    rel=DELETE_AWARDED_COMPLETED_ITEM_VIEW,
-                    method='DELETE')
-        interface.alsoProvides(link, ILocation)
-        link.__name__ = ''
-        link.__parent__ = context
-        _links.append(link)

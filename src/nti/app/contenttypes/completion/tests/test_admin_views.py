@@ -464,9 +464,9 @@ class TestAdminAwardViews(ApplicationLayerTest):
         
         data = {'completable_ntiid': 'not_a_valid_ntiid'}
         self.testapp.post_json(award_completed_url, data, extra_environ=course_admin_environ, status=422)
-        
+
         #Test deletion of AwardedCompletedItem
-        delete_awarded_link = self.require_link_href_with_rel(res.json_body, DELETE_AWARDED_COMPLETED_ITEM_VIEW)
+        delete_awarded_link = self.require_link_href_with_rel(res.json_body, 'edit')
         self.testapp.delete(delete_awarded_link)
         
         with mock_dataserver.mock_db_trans(self.ds, site_name='platform.ou.edu'):
