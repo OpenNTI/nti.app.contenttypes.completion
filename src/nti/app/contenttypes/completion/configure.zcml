@@ -32,12 +32,8 @@
         role="role:nti.dataserver.site-admin" />
         
     <grant
-		permission="nti.actions.completion.awardprogress"
-		role="nti.roles.course_instructor" />
-
-	<grant
-		permission="nti.actions.completion.awardprogress"
-		role="nti.roles.course_ta" />
+    	permission="nti.actions.completion.awardprogress"
+    	role="role:nti.admin" />
 
     <!-- adapter -->
     <adapter factory=".adapters._completion_context_progress"
@@ -137,6 +133,10 @@
                 provides="nti.externalization.interfaces.IExternalMappingDecorator"
                 for="nti.contenttypes.completion.interfaces.ICompletableItem
                      pyramid.interfaces.IRequest" />
+                     
+    <subscriber factory="nti.appserver.pyramid_renderers_edit_link_decorator.OIDEditOrDeleteLinkDecorator"
+				provides="nti.externalization.interfaces.IExternalMappingDecorator"
+				for="nti.contenttypes.completion.interfaces.IAwardedCompletedItem pyramid.interfaces.IRequest" />
 
 	<!-- Index  -->
 	<adapter factory=".adapters._completed_item_to_site" />

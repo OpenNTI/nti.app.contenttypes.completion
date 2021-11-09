@@ -22,6 +22,7 @@ from nti.app.contenttypes.completion import COMPLETION_REQUIRED_VIEW_NAME
 from nti.app.contenttypes.completion import COMPLETION_NOT_REQUIRED_VIEW_NAME
 from nti.app.contenttypes.completion import DEFAULT_REQUIRED_POLICY_PATH_NAME
 from nti.app.contenttypes.completion import AWARDED_COMPLETED_ITEMS_PATH_NAME
+from nti.app.contenttypes.completion import DELETE_AWARDED_COMPLETED_ITEM_VIEW
 
 from nti.app.renderers.decorators import AbstractRequestAwareDecorator
 from nti.app.renderers.decorators import AbstractAuthenticatedRequestAwareDecorator
@@ -32,6 +33,7 @@ from nti.contenttypes.completion.authorization import ACT_VIEW_PROGRESS
 from nti.contenttypes.completion.authorization import ACT_AWARD_PROGRESS
 
 from nti.contenttypes.completion.interfaces import ICompletableItem
+from nti.contenttypes.completion.interfaces import IAwardedCompletedItem
 from nti.contenttypes.completion.interfaces import ICompletionContext
 from nti.contenttypes.completion.interfaces import ICompletionSubContext
 from nti.contenttypes.completion.interfaces import ICompletionContextProvider

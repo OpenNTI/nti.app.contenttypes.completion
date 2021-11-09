@@ -221,3 +221,4 @@ class AwardedCompletedItemsPathAdapter(Contained, CompletionContextMixin, UserTr
         self.request = request
         self.__parent__ = context
         self.user = None
+        
