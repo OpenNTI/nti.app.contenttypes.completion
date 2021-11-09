@@ -30,6 +30,10 @@
     <grant
         permission="nti.actions.completion.awardprogress"
         role="role:nti.dataserver.site-admin" />
+        
+    <grant
+    	permission="nti.actions.completion.awardprogress"
+    	role="role:nti.admin" />
 
     <!-- adapter -->
     <adapter factory=".adapters._completion_context_progress"

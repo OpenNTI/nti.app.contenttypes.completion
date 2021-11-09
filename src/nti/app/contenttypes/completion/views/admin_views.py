@@ -44,6 +44,8 @@ from nti.appserver.ugd_edit_views import UGDDeleteView
 
 from nti.common.string import is_true
 
+from nti.contenttypes.completion.authorization import ACT_AWARD_PROGRESS
+
 from nti.contenttypes.completion.interfaces import ICompletedItemContainer
 from nti.contenttypes.completion.interfaces import ICompletableItemProvider
 from nti.contenttypes.completion.interfaces import IPrincipalCompletedItemContainer
@@ -55,13 +57,7 @@ from nti.contenttypes.completion.utils import update_completion
 from nti.contenttypes.completion.utils import get_completable_items_for_user
 from nti.contenttypes.completion.utils import get_required_completable_items_for_user
 
-from nti.contenttypes.courses.interfaces import ICourseInstance
-
-from nti.contenttypes.courses.utils import is_course_instructor
-
 from nti.dataserver import authorization as nauth
-
-from nti.dataserver.authorization import is_admin_or_site_admin
 
 from nti.dataserver.interfaces import IDataserverFolder
 
@@ -279,6 +275,7 @@ class UserCompletionDataView(AbstractAuthenticatedView):
 @view_config(route_name='objects.generic.traversal',
              renderer='rest',
              context=IAwardedCompletedItemsContext,
+             permission=ACT_AWARD_PROGRESS,
              request_method='POST')
 class AwardCompletedItemView(AbstractAuthenticatedView,
                              ModeledContentUploadRequestUtilsMixin):
@@ -306,10 +303,6 @@ class AwardCompletedItemView(AbstractAuthenticatedView,
             values['Success'] = True
         return values
     
-    @Lazy
-    def _course(self):
-        return ICourseInstance(self.context.completion_context)
-    
     def _get_item_for_key(self, key):
         item = find_object_with_ntiid(key)
         if item is None:
@@ -322,15 +315,7 @@ class AwardCompletedItemView(AbstractAuthenticatedView,
                          'code': 'InvalidCompletableItemError'})
         return item
     
-    # Only course instructors, site admins, and NT admins should be able to manually award completables
-    # This will be replaced by the new ACT_AWARD_PROGRESS permission when implemented
-    def _check_access(self):
-        if      not is_admin_or_site_admin(self.remoteUser) \
-                and not is_course_instructor(self._course, self.remoteUser):
-                raise hexc.HTTPForbidden()
-    
     def __call__(self):
-        self._check_access()
         
         user = self.context.user
         
@@ -378,15 +363,9 @@ class AwardCompletedItemView(AbstractAuthenticatedView,
 @view_config(route_name='objects.generic.traversal',
              renderer='rest',
              context=IAwardedCompletedItem,
+             permission=ACT_AWARD_PROGRESS,
              request_method='DELETE')
 class AwardCompletedItemDeleteView(UGDDeleteView):
-    
-    # Only course instructors, site admins, and NT admins should be able to manually award completables
-    # This will be replaced by the new ACT_AWARD_PROGRESS permission when implemented
-    def _check_access(self):
-        if      not is_admin_or_site_admin(self.remoteUser) \
-                and not is_course_instructor(self._course, self.remoteUser):
-                raise hexc.HTTPForbidden()
     
     def _do_delete_object(self, theObject):
         container = theObject.__parent__
@@ -394,7 +373,6 @@ class AwardCompletedItemDeleteView(UGDDeleteView):
         return theObject
     
     def __call__(self):
-        self._check_access()
         result = super(AwardCompletedItemDeleteView, self).__call__()
         logger.info('Deleted %s', self.context)
         return result
